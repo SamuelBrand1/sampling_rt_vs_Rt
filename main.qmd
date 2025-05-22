@@ -232,17 +232,26 @@ The evaluation framework uses the scoringutils and scoringRules R packages for q
 
 Say if it looked okay and reference SI.
 
-### Overall
+### Simulated scenarios
+
+#### Overall
 
 - Overall summary figure of posterior prediction performance and comment
 - Sub panel looking at performance by horizon
 - Overall summary figure looking at inference efficiency
 
-### Stratified by scenario
+#### Stratified by scenario
 
 - By scenario summary of posterior prediction performance repeated for all scenarios
 - By scenario summary of inference efficiency performance
 - Example visualisation by scenario
+
+### Case study: Sierre Leone 2014-2-16 Ebola virus disease outbreak
+
+- Overall performance
+- By time period
+- By time horizon
+- By time horizon and period.
 
 ## Discussion
 
