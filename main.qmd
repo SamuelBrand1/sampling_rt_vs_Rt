@@ -153,7 +153,7 @@ We use the renewal process model for all simulations with the following procedur
 1. Take a fixed time series of Rt for 160 days. See the next subsection for more description of these scenarios.
 2. Add noise to the fixed Rt estimates draws from a N(0, 0.1) with a fixed seed of `12345`.
 3. Simulate daily incidence starting from $I_0 = 10$ cases and a fixed generation interval (GI) probability mass function (PMF) specific to the given scenario.
-4. The delay between infection and case ascertainment is represented as a convolution on the true incidence time series. For any given infected person the delay between infection and ascertainment is distributed; this is mapped to our discrete-time forward simulations using double interval censoring of both the time of infection and the time of ascertainment.
+4. The delay between infection and case ascertainment is represented as a convolution on the true incidence time series **CITATIONS**. For any given infected person the delay between infection and ascertainment is distributed **SOME GAMMA/LOGNORMAL**; this is mapped to our discrete-time forward simulations using double interval censoring of both the time of infection and the time of ascertainment **CITE SWP + OTHERS**.
 5. Simulated day of the week periodicity by...
 6. Simulate additional negative binomial observation noise on the delayed cases drawn with the mean of the true cases and overdispersion of 10.
 
@@ -252,6 +252,17 @@ Say if it looked okay and reference SI.
 
 ### Summary
 
+- Our systematic evaluation of infection-generating processes reveals important insights for infectious disease modelling
+- <The renewal process model shows [performance level] compared to alternatives across [proportion] of scenarios and target measures>
+- <Direct incidence models demonstrate [performance level] for short-term forecasting but [performance level] for transmission intensity estimation>
+- <Growth rate models perform [performance level] for growth rate estimation but [performance level] for other measures>
+- <Model performance varies by [degree] across epidemiological scenarios, with endemic settings showing [similarity/difference] in optimal approaches compared to outbreak scenarios>
+- <Generation interval misspecification impacts all models with [relative impact] on renewal process models>
+- <Computational efficiency varies by [degree] across model types, with [model type] offering the best performance-to-cost ratio>
+- The choice of infection-generating process should be guided by the specific surveillance task, available computational resources, and confidence in generation interval estimates
+- Our findings <support/challenge> the common assumption that mechanistic models necessarily outperform phenomenological approaches for all surveillance tasks
+
+
 ### Strengths and limitations of this work
 
 - No exploration of varying delay distribution impacts
@@ -286,7 +297,7 @@ Say if it looked okay and reference SI.
 
 ## References
 
-## Appendix: Mathematical Details {.appendix}
+## Supplementary Information {.appendix}
 
 ### Mathematical Specification of generative models
 
