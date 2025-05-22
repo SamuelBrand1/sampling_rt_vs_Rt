@@ -267,3 +267,18 @@ This section provides information on accessing and using our code:
 - Documentation of key functions and workflows
 
 ## References
+
+**Other scenarios**
+
+These scenarios were considered but not implemented in this analysis (rather than implemented and then discarded from results).
+
+- *Early outbreak*. Constant $R_t = R_0$ but for a short period.
+- *Early outbreak with random effects*. As *Early outbreak* scenario but with white noise jitter on $R_t$.
+- *Piecewise constant with large switches*: This scenario provides both sharp changes at the start of the timeseries and more gradual transitions towards the end. $R_t$ varies according to the following schedule:
+  - 1.1 for two weeks
+  - 2 for two weeks
+  - 0.5 for two weeks
+  - 1.5 for two weeks
+  - 0.75 for two weeks
+  - 1.1 for six weeks
+  - sine curve centered at 1 with amplitude of 0.3 afterwards
