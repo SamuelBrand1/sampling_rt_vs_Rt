@@ -1,0 +1,256 @@
+---
+title: "Supporting information: Evaluating infection-generating processes for infectious disease situational awareness: Is the renewal process necessary?"
+author:
+  - name: Samuel P. C. Brand
+    orcid: 0000-0003-0645-5367
+    affiliations:
+      - name: Center for Forecasting and Outbreak Analytics, Centers for Disease Control and Prevention, United States of America
+  - name: Sam Abbott
+    orcid: 0000-0001-8057-8037
+    affiliations:
+      - name: Centre for Mathematical Modelling of Infectious Diseases, London School of Hygiene & Tropical Medicine, London, United Kingdom
+bibliography: references.bib
+number-sections: true
+format:
+  pdf:
+    toc: true
+    number-sections: true
+    colorlinks: true
+---
+
+```{julia}
+#| echo: false
+#| eval: false
+using Pkg
+index_location = @__DIR__()
+Pkg.activate(index_location)
+Pkg.resolve()
+Pkg.instantiate()
+Pkg.add(["CairoMakie", "JLD2", "DataFramesMeta", "DrWatson", "CSV"])
+
+using DataFramesMeta, JLD2, CSV
+```
+
+## Mathematical Specification of generative models
+
+### The infection-generating process
+
+The infection incidence processes $(I_t)_{t\geq 1}$ we consider are generated using the general form,
+
+$$I_t = f_I((I_s)_{s < t}, Z_t, \theta),\qquad t \geq 1.$$
+
+Where,
+
+1. $(Z_t)_{t\geq 1}$: A latent stochastic process.
+2. $(I_s)_{s < t}$: Incidence strictly before time step $t$.
+3. $\theta_I$: Model parameters for the infection generating process including initial conditions $(I_s)_{s<1}$.
+
+Different choices of $f_I$ correspond to different *infection generating processes* (IGPs). In this study, we consider three IGPs:
+
+- *Direct infection*. This IGP uses the latent process $Z_t$ models as a log-infection incidence process:   
+  $$I_t = \exp(Z_t).$$
+- *Growth rate process.* This IGP uses the latent process $Z_t$ as the exponential growth rate $r_t = Z_t$ on each time step:
+  $$\begin{align}
+  I_t &= \exp(r_t) I_{t-1},\qquad t = 2, 3, \dots\\
+  I_1 &= \exp(r_1) I_0\qquad \text{Initial condition.}
+  \end{align}$$
+- *Renewal process.* This IGP uses the latent process $Z_t$ as the log-reproductive number $\log R_t = Z_t$.
+  $$\begin{align}
+  I_t &= R_t \sum_{s \geq 1} I_{t-s} g_s,\qquad t = 2, 3, \dots\\
+  I_1 &= R_1 \sum_{s \geq 1} I_{-s} g_s, \qquad \text{Initial condition.}
+  \end{align}$$
+
+  The parameters that determine the initial condition of the renewal model are $I_0$ and $R_1$. The initial history of latent infections $I_{-1}, I_{-2},\dots$ is constructed as
+
+  $$I_t = e^{rt} I_0,\qquad t = 0, -1, -2,...$$
+
+  Where the exponential growth rate $r$ is determined by the initial reproductive number $R_1$ via the solution to the implicit equation,
+
+  $$R_1 = 1 \Big{/} \sum_{t\geq 1} e^{-rt} g_t.$$
+
+### The latent process
+
+In the infection-generating processes (IGPs) considered above, 
+
+1. **Random walk** with unknown standard deviation $\sigma >0$, 
+   $$Z_t = Z_{t-1} + \sigma \epsilon_t.$$
+2. **Stable AR(1) process** with unknown parameters $|\psi| < 1$ and $\sigma > 0$,
+   $$Z_t = \psi Z_{t-1} + \sigma \epsilon_t.$$
+3. **Differenced AR(1) process** with unknown parameters $|\psi| < 1$ and $\sigma > 0$,
+   $$\begin{align}
+   \Delta Z_t &= \psi \Delta Z_{t-1} + \sigma \epsilon_t,\\
+   Z_t &= Z_0 + \sum_{s=1}^t\Delta Z_{s}.
+   \end{align}$$
+
+### Observation model
+
+In this study, we consider a common situation in epidemic situational awareness that the available data is a time series of counts $y(t)$ for time indices $t = 1, 2, \dots, T$. Typically, $y(t)$ will be a time series of incident events such as determined cases, hospital admissions or deaths reported either daily or weekly. As a generative model for the observed data time series $y(t)$, we invoke an underlying latent infection process $I(t)$ which represents the spread of the underlying infectious pathogen among the target population with each count element of $y(t)$ is assumed to derive, with some ascertainment delay, from a latent infection. We can model ascertainment delay using a parametric distribution function $f_\theta(d),~ d = 0, 1, 2,...$ for the probability of an ascertainment delay of $d$ times steps given distributional parameters $\theta$. Consequently, if this delay distribution does not itself vary over time, the conditional expectation for the data time series is,
+
+$$\mu(t) = \mathbb{E}[y(t) | I] = \sum_{s \leq t} f_\theta(t-s) I(s).$$
+
+In this study, we assume a negative binomial link between conditional expectations and actual observations with mean $\mu(t)$ and overdispersion parameter $\alpha$:
+
+$$y(t) | I \sim \text{NegBin}(\text{mean} = \mu(t), ~ \text{overdispersion} = \alpha).$$ 
+
+## Detailed simulation procedures
+
+### Generation interval specification
+
+This section provides detailed information on the generation interval distributions used in our simulations, including:
+
+- The exact parameterization of the gamma distributions used for short, medium, and long generation intervals
+- Visualization of the discretized probability mass functions
+- Details of the truncation and discretization procedures applied
+- Comparison of theoretical and empirical moments after discretization
+
+### Scenario Rt trajectories
+
+This section provides detailed information on the Rt trajectories used in each scenario:
+
+- Exact mathematical specification of the Rt curves for each scenario
+- Visualization of the deterministic and noisy Rt trajectories
+- Statistical properties of the added noise
+
+### Observation model details
+
+This section elaborates on the observation model used in our simulations:
+
+- Detailed specification of the delay distribution between infection and case ascertainment
+- Implementation details of the day-of-week effects
+- Parameterization of the negative binomial observation noise
+
+## Model validation and prior specification
+
+### Prior predictive modelling with default priors and transformations
+
+As a first attempt, we used common priors for each latent process considered in this study: random walk, first order auto-regressive and differenced first-order auto-regressive. These priors were:
+
+- The initial value parameter for all latent processes was:
+$$
+Z_0 \sim \text{Normal}(\text{mean} = 0, \text{std} = 0.25).
+$$
+- The standard deviation prior for all latent processes was:
+$$
+\sigma \sim \text{HalfNormal}(\text{mean} = 0.25).
+$$
+- The damping/auto-regression parameter for the auto-regressive latent processes was:
+$$
+\rho \sim \text{Beta}(a = 0.5, b = 0.5).
+$$
+
+For direct infection and renewal models the latent process represents a log-transformed epidemiological quantity, respectively: $Z_t = \log R_t$ and $Z_t = \log I_t$. The exponential growth rate modelling we identify the exponential growth rate with the latent process $Z_t = r_t$.
+
+Using these priors we made prior predictive checks across our range of models. This was run with the pipeline script.
+
+```bash
+% julia pipeline/scripts/run_priorpred_pipeline.jl 1000
+```
+
+We noted that for a substantial number of the model configurations there were model predictive samples with such large numbers of infecteds that calls to `BigInt` caused `InexactError` exceptions. Rather than directly stop these exceptions we recorded the pattern of prior prediction failure so as to inform model improvement (Table \ref{tbl-prior-fail}).
+
+```{julia}
+#| output: false
+#| eval: false
+priorpred_dir = joinpath(@__DIR__(),"..", "pipeline/data/priorpredictive/")
+priorpred_datafiles = readdir(priorpred_dir) |>
+  fns -> filter(fn -> contains(fn, ".jld2"), fns) #filter for .jld2 files
+priorpred_outcomes_df = DataFrame()
+if !isfile(joinpath(index_location, "pass_fail_rdn1.csv"))
+  priorpred_outcomes_df = mapreduce(vcat, priorpred_datafiles) do fn
+    D = load(joinpath(priorpred_dir, fn))
+    igp = D["inference_config"]["igp"]
+    latent_model = D["inference_config"]["latent_model"]
+    gi_mean = D["inference_config"]["gi_mean"]
+    T1, T2 = split(D["inference_config"]["tspan"], "_")
+    runsuccess = D["priorpredictive"] .== "Pass"
+    df = DataFrame(
+      infection_gen_proc = igp,
+      latent_model = latent_model,
+      gi_mean = gi_mean,
+      T1 = T1,
+      T2 = T2,
+      T_diff = parse(Int, T2) - parse(Int, T1),
+      runsuccess = runsuccess,
+      )
+  end
+  CSV.write(joinpath(index_location, "pass_fail_rdn1.csv"), priorpred_outcomes_df)
+else
+  priorpred_outcomes_df = CSV.File(joinpath(index_location, "pass_fail_rdn1.csv")) |> DataFrame
+end
+```
+
+```{julia}
+#| label: tbl-prior-fail
+#| tbl-cap: Number of prior predictive successes and fails from initial prior group grouped by infection generating process and latent model.
+#| tbl-cap-location: bottom
+#| eval: false
+priorpred_outcomes_df |>
+  df -> @groupby(df, :infection_gen_proc, :latent_model) |>
+  gd -> @combine(gd, :n_success = sum(:runsuccess), :n_fail = sum(1 .- :runsuccess))
+```
+
+### Comprehensive prior specification
+
+This section provides more comprehensive information on the priors used in our models:
+
+- Complete specification of all prior distributions
+- Justification for prior choices
+- Prior predictive check results for each model configuration
+- Visualization of prior predictive distributions for key parameters
+
+## Model implementation details
+
+### MCMC diagnostics
+
+This section presents detailed MCMC diagnostics for our model fitting:
+
+- Convergence statistics (R-hat values) across model configurations
+- Effective sample size statistics
+- Analysis of divergent transitions and maximum tree depth warnings
+- Posterior predictive checks for each model configuration
+
+### Computational performance
+
+This section details the computational performance of our models:
+
+- Runtime comparisons across model configurations
+- Memory usage statistics
+- Scaling properties with dataset size
+- Recommendations for computational resources needed for each model type
+
+## Detailed evaluation results
+
+### Performance by target measure
+
+This section provides detailed evaluation results for each target measure:
+
+- Comprehensive tables of performance metrics for each model and target measure
+- Statistical analysis of performance differences
+- Visualizations of performance patterns
+
+### Performance by scenario
+
+This section provides scenario-specific evaluation results:
+
+- Detailed performance metrics for each model in each scenario
+- Analysis of scenario-specific patterns in model performance
+- Case studies highlighting particularly interesting behavior
+
+### Sensitivity analyses
+
+This section presents results from our sensitivity analyses:
+
+- Impact of varying generation interval misspecification levels
+- Sensitivity to initial conditions and parameter settings
+- Effects of data quality and quantity on model performance
+
+## Code availability
+
+This section provides information on accessing and using our code:
+
+- Repository location and access instructions
+- Code structure and organization
+- Instructions for reproducing our analyses
+- Documentation of key functions and workflows
+
+## References

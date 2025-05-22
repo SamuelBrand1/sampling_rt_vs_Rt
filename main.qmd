@@ -8,14 +8,13 @@ author:
   - name: Sam Abbott
     orcid: 0000-0001-8057-8037
     affiliations:
-      - name: Center for Forecasting and Outbreak Analytics, Centers for Disease Control and Prevention, United States of America
       - name: Centre for Mathematical Modelling of Infectious Diseases, London School of Hygiene & Tropical Medicine, London, United Kingdom
 format:
   pdf:
-    toc: true
-    number-sections: true
+    toc: false
+    number-sections: false
     colorlinks: true
-bibliography: rt_paper.bib
+bibliography: references.bib
 ---
 
 ## Abstract
