@@ -38,108 +38,107 @@ We aim to systematically evaluate how infection-generating processes perform acr
 
 ## Methods
 
-In this section, we describe the components of the generic model framework that we use to systematically evaluate different approaches. Second, we describe the experimental matrix of generative models, along with different time points, forecast horizons, and potential misspecification of the underlying generation interval. Third, we describe the target epidemiological measures of interest in this study and the surveillance task scenarios that we consider. Fourth, we describe the evaluation metric that we use to evaluate each generative model against each target measure. Finally, we outline the implementation details and define the evaluation metrics for this implementation.
+In this section, we first introduce the transmission intensity measures used for situational awareness and considered in this study. Second, we describe the components of our generic model framework that we use to construct different model-based approaches to estimating these measures. Third, we describe the experimental matrix of generative models, along with different time points, forecast horizons, and potential misspecification of the underlying generation interval. Fourth, we describe the surveillance task scenarios that we consider, including both simulated epidemics and real-world case studies. Finally, we outline the implementation details and define the evaluation metrics for this implementation.
+
+### Transmission intensity measures for situational awareness
+
+We consider three transmission intensity measures ($T(t)$) that are commonly used targets for real-time surveillance and can be defined from a time series of latent infections ($I(t)$):
+
+- **Logarithmic transformation of latent infections** $T(t) = \ln I(t)$, which directly measures the scale of the epidemic on a logarithmic scale.
+- **Time-varying growth rate**, $T(t) = r(t) = \ln (I(t) / I(t-1))$, which quantifies the relative change in infections between consecutive time steps.
+- **Time-varying instantaneous reproductive number** $T(t) = \mathcal{R}(t) = I(t) / [I \circ g](t)$, where $x\circ y$ is the discrete convolution of vectors $x$ and $y$, and $g$ represents the generation interval distribution [@abbott2020epinow2; @abbott2021epinowcast; @scott2021epidemia; @Cori2022]. This measures the average number of secondary infections caused by each primary infection.
+
+These measures provide different perspectives on epidemic dynamics and are used for different aspects of situational awareness. The direct transformation between latent infections $I(t)$ and derived measures such as $\mathcal{R}(t)$ raises an important question: which process should be treated as generative and which should be calculated as a transformation of the other? This distinction is central to our analysis.
 
 ### Generative model framework for epidemiological data
 
-This section describes the generic model framework we use to define the generative models used in the rest of the analysis.
+We use a composable generative model framework, as illustrated in Figure @fig-model-composition, that allows us to systematically experiment with different approaches to estimating the transmission intensity measures. A generative model specifies the full joint probability distribution of all variables in a system, both observed and unobserved, and can be used to simulate complete epidemiological trajectories. Our framework decomposes the generative process into distinct components that can be swapped in and out as modules, enabling us to isolate the effects of specific modelling choices while maintaining a consistent overall structure.
 
-#### Transmission intensity measures
-
-We consider three transmission intensity measures that can be defined from a series of latent infections. Each is also a target for real-time surveillance.
-
-- Logarithmic transformation of latent infections $T(t) = \ln I(t)$.
-- The time-varying growth rate, $T(t) = r(t) = \ln (I(t) / I(t-1))$.
-- The time-varying reproductive number $T(t) = \mathcal{R}(t) = I(t) / [I \circ g](t)$, where $x\circ y$ is the discrete convolution of vectors $x$ and $y$.
-
-The direct transformation between latent infections $I(t)$ and transmission intensity measures such as $\mathcal{R}(t)$ raises a problem, since both processes cannot be defined independently of each other without causing a contradiction. Which process is treated as generative and which is calculated as a transformation of the other?
-
-In our framework, each generative model that we experiment with defines one of these epidemiological processes as being *primary*. The other epidemiological processes are defined as *secondary*. Secondary epidemiological processes are calculated from their definition as conditional on the latent infections generated.
-
-#### Generative model as composed model components
-
-We divide our generative model for epidemiological data into components[@bjornstad2022epidemics], in this case three. These are:
-
-1. The *infection-generating process*. This specifies the structure of the dependency of the new latent incidence over time $t$, $I(t)$, on the past incidence $\{I(s),~s < t\}$, and the primary measure of transmission intensity $T(t)$, for example $T(t)=\mathcal{R}(t)$ could be the time-varying reproductive number.
-
-2. The stochastic *latent process* $Z(t)$. The latent process drives the stochastic dynamics of the transmission intensity defined in 1. via direct transformation $T(t) = g(Z(t))$. For example $T(t) = \exp(Z(t))$ where $Z(t)$ is a random walk.
-
-3. The *observation model* defines how the trajectory of latent infections $\{I(s),~s \leq t\}$ is transformed into expected epidemiological data counts $Y(t)$ and the link distribution with actual observations $y(t) \sim f(Y(t), \varphi)$ for some sampling distribution $f$ and observation model parameters $\varphi$. For example, $Y(t) = [I \circ D](t)$ for some observation delay probability distribution D and $f$ could be a negative binomial distribution with mean $Y(t)$ and dispersion parameter $\varphi$.
-
-The model components compose to define the full generative model. The model compositions and dependencies are as follows:
-
-- The primary transmission intensity $T(t)$ is defined by combining the choice of the infection-generating process [1.] and the latent process [2.] since the choice of the infection-generating process selects the measure of the primary transmission intensity and the latent process $Z(t)$ generates its trajectory.
-- The latent infections $I(t)$ are defined by combining the choice of the infection-generating process [1.] and the trajectory of the primary transmission intensity $T(t)$ since the choice of infection-generating process defines how $T(t)$ propagates the infection dynamics.
-- Secondary transmission intensity measures are defined by the choice of infection-generating process [1.] and the trajectory of latent infections $I(t)$ since secondary transmission intensities are direct transformations in $I(t)$, except for the number of reproductions varying in time that also needs the distribution of the generation interval $g$ defined by the choice of infection-generating process.
-- The expected observations $Y(t)$ are defined by the choice of the observation model [3.] and the trajectory of latent infections.
+In our framework, each generative model defines one tranmission intensity measure as being *primary* ($T_p(t)$). This primary process is directly modelled through a stochastic process. Other epidemiological processes (which we call *secondary* ($T_s(t)$)) are then calculated as transformations of the primary process and the latent infections generated. This distinction allows us to evaluate how different choices of primary processes affect the estimation of all epidemiological measures of interest. This construction allows us to flexibility reproduce a range of methods for estimating the transmission intensity measures that have been proposed in the literature including the renewal process, growth rate process, and direct infection process [@abbott2020epinow2; @abbott2021epinowcast; @scott2021epidemia; @Cori2022].
 
 ![Directed graph representing the generative model components. Shown are model choices we experiment over in this study (green rectangles), the observation model (which is fixed in this study; blue rectangle), and generated quantities (red boxes). The generated quantities are split between a primary transmission intensity measure $T(t)$ which composes with the infection-generating process to generate latent infections, and secondary transmission intensity measures. All transmission intensity measures are targets for surveillance. Each modelled quantity can be constructed conditional on parent quantities on the graph (directed edges).](figures/model_composition.png){#fig-model-composition}
 
-### Latent infection-generating processes
+#### Model components
 
-We consider stochastic process models that can be used to generate infections that won't be directly observed, we call these stochastic process models *latent infection-generating processes*. We further limit our analysis to latent infection-generating processes that can be formulated as a function of a basic noise process $(\epsilon_t)_{t\geq 1}$ where each is independent and identically distributed $\epsilon_t \sim \text{Normal}(0,1)$. This is a discrete-time analogue formulation to using the Wiener process in the construction of stochastic differential models [@oksendal2013stochastic], and therefore, covers a wide range of useful modelling frameworks.
+We divide our generative model for epidemiological data into three key components:
 
-In epidemiological modelling, it is common to be interested in quantities that summarise the trajectory of underlying infections, for example, the reproductive number [@anderson1991infectious; @diekmann1990definition; @keeling2011modeling] or exponential growth rate [@anderson1991infectious; @keeling2011modeling] which may themselves be time-varying [@gostic2020practical]. It is common for the infection-generating process to be defined in terms of a time-varying reproductive number, for example, the renewal model of latent infections [@mishra_derivation_2020] which is the default infection-generating process in several software packages [@abbott2020epinow2; @scott2021epidemia; @Cori2022]. For this reason, we will consider a taxonomy of infection-generating processes which distinguishes between two factors:
+1. **The latent process** $Z(t)$ drives the dynamics of the **primary** transmission intensity measure via a transformation $T_p(t) = f(Z(t))$. This component can be used to introduce stochasticity into the system and can take various forms such as random walks or autoregressive processes.
+1. **The infection-generating process** specifies how new latent incidence over time $t$, $I(t)$, depends on past incidence $\{I(s),~s < t\}$ and the primary transmission intensity measure $T_p(t)$. From $I(t)$ we can then calculate the secondary transmission intensity measures $T_s(t)$ via a transformation $T_s(t) = g(I(t))$.
+3. **The observation model** defines how the trajectory of latent infections $\{I(s),~s \leq t\}$ is transformed into expected epidemiological data counts $Y(t)$ and specifies the probabilistic link between these expected counts and actual observations $y(t)$.
 
-- A generating process $(Z_t)_{t\geq 1}$ which has a functional dependence $f_Z$ at each time step $t$ on:
-  - The noise process up to time $t$, $\epsilon_{t},\epsilon_{t-1},\epsilon_{t-2},\dots$.
-  - Past $Z_{t-1},Z_{t-2},\dots$.
-  - Model parameters $\theta$.
-- The incidence process $(I_t)_{t\geq 1}$ which has a functional dependence $f_I$ at each time step $t$ on:
-  - The generating process on that time step $Z_t$.
-  - Past incidence $I_{t-1},I_{t-2},\dots$.
-  - Model parameters $\theta$.
+These components compose to define the full generative model, with each component depending on specific choices made for the others, as illustrated in Figure @fig-model-composition.
 
-Combining these gives the general latent infection-generating process,
+### Latent process models
 
-$$
-\begin{align}
-Z_t &= f_Z((Z_s)_{s < t}, (\epsilon_{s})_{s\leq t}, \theta),\\
-h_{I}^{-1}(I_t) &= f_I(h^{-1}_Z(Z_t), (I_s)_{s < t}, \theta). \qquad t = 1, 2 , \dots
-\end{align}
-$$
+The primary transmission intensity measure is defined by a stochastic latent process $Z_t$. We consider three latent process models:
 
-Where $h_Z$ and $h_I$ are link bijector functions for mapping between constrained and unconstrained domains.
+1. **Random walk** with unknown standard deviation $\sigma >0$: 
+   $$Z_t = Z_{t-1} + \sigma \epsilon_t.$$
 
-In this work, we consider several modelling options for the latent infection-generating process across a matrix of choices for $f_I$ and $f_Z$:
+2. **Stable AR(1) process** with unknown parameters $|\psi| < 1$ and $\sigma > 0$:
+   $$Z_t = \psi Z_{t-1} + \sigma \epsilon_t.$$
 
-- Generating process options ($f_Z$):
-  1. **Random walk** with unknown standard deviation $\sigma >0$,
-     $$Z_t = Z_{t-1} + \sigma \epsilon_t.$$
-  2. **Stable AR(1) process** with unknown parameters $|\psi| < 1$ and $\sigma > 0$,
-     $$Z_t = \psi Z_{t-1} + \sigma \epsilon_t.$$
-  3. **Differenced AR(1) process** with unknown parameters $|\psi| < 1$ and $\sigma > 0$,
-     $$\begin{align}
-     \Delta Z_{t} &= Z_{t} - Z_{t-1}, \\
-     \Delta Z_t &= \psi \Delta Z_{t-1} + \sigma \epsilon_t.
-     \end{align}$$
+3. **Differenced AR(1) process** with unknown parameters $|\psi| < 1$ and $\sigma > 0$:
+   $$\begin{align}
+   \Delta Z_t &= \psi \Delta Z_{t-1} + \sigma \epsilon_t,\\
+   Z_t &= Z_0 + \sum_{s=1}^t\Delta Z_{s}.
+   \end{align}$$
 
-- Incidence process options ($f_I$):
-  1. **Direct incidence trajectory** with some link function $h_I: \mathbb{R} \to \mathbb{R}^{+}$. This model generates the latent infection trajectory as a random process,
-     $$h^{-1}_I(I_t) = Z_t.$$
-  2. **Epidemic growth rate trajectory**. This model generates a time-varying exponential growth rate $r_t$ as a random process jointly with an initial log-incidence rate $\ln I_0$. In combination, these generate the incidence trajectory,
-     $$\begin{align}
-     r_t & = Z_t, \\
-     \ln I_t - \ln I_0 &= \sum_{s \leq t} r_t.
-     \end{align}$$
-  3. **Renewal model**. This model requires a discretized probability mass function $(g_i)_{i=1,\dots,m}$ representing a discrete time generation interval [@fraser2007estimating]. The time-varying reproductive number $R_t$ is modelled as a random process with some link function $h_Z: \mathbb{R} \to \mathbb{R}^{+}$ generated jointly with an initial set of incidences: $I_0, I_{-1}, I_{-2},...,I_{-(m-1)}$. In combination, these generate the incidence trajectory,
-     $$\begin{align}
-     h_Z^{-1}(R_t) &= Z_t, \\
-     I_t &= R_t \sum_{s < t} g_{t-s} I_s.
-     \end{align}$$
+Where $\epsilon_t \sim \text{Normal}(0,1)$ are independent standard normal random variables. These latent processes could potentially be applied to any component of the model framework, though in this study we focus on their application to the infection-generating process. Our choice of latent processes is motivated by those commonly used in the literature [@abbott2020epinow2; @abbott2021epinowcast; @scott2021epidemia; @Cori2022].
 
-#### Renewal model in the context of general model
+### Infection-generating processes
 
-The general model (1) includes the renewal model with a generating process for the time-varying reproductive number. For example, to recreate the model used in Mishra et al [@mishra_derivation_2020] to analyse South Korean Covid infections we would choose:
+We consider three distinct infection-generating processes, each treating a different transmission intensity measure as primary:
 
-- Generating process $Z_t$ as the log time-varying reproductive number $R_t = \exp(Z_t)$.
-- The link functions $h_Z = \exp$ and $h_I$ as the identity map.
-- $f_Z$ such that $Z_t$ is an AR(2) process with model parameters representing time-lag correlation and noise standard deviation,
-  $$Z_t = \rho_1 Z_{t-1} + \rho_2 Z_{t-2} + \sigma^* \epsilon_t.$$
-  Where, $\rho_1$, $\rho_2$ and $\sigma^*$ are model parameters of the AR(2) process.
-- $f_I$ such that
-  $$I_t = R_t \sum_{s < t} g(t-s) I_s.$$
-  Where $g$ is the generation interval for the pathogen.
+1. **Direct infection process** uses the latent process $Z_t$ to model log-infection incidence directly:   
+   $$I_t = \exp(Z_t).$$
+
+2. **Growth rate process** uses the latent process $Z_t$ as the exponential growth rate $r_t = Z_t$ on each time step:
+   $$\begin{align}
+   I_t &= \exp(r_t) I_{t-1},\qquad t = 2, 3, \dots\\
+   I_1 &= \exp(r_1) I_0\qquad \text{Initial condition.}
+   \end{align}$$
+
+3. **Renewal process** uses the latent process $Z_t$ as the log-reproductive number $\log R_t = Z_t$:
+   $$\begin{align}
+   I_t &= R_t \sum_{s \geq 1} I_{t-s} g_s,\qquad t = 2, 3, \dots\\
+   I_1 &= R_1 \sum_{s \geq 1} I_{-s} g_s, \qquad \text{Initial condition.}
+   \end{align}$$
+
+   The parameters that determine the initial condition of the renewal model are $I_0$ and $R_1$. The initial history of latent infections $I_{-1}, I_{-2},\dots$ is constructed as
+   $$I_t = e^{rt} I_0,\qquad t = 0, -1, -2,...$$
+   where the exponential growth rate $r$ is determined by the initial reproductive number $R_1$ via the solution to the implicit equation,
+   $$R_1 = 1 \Big{/} \sum_{t\geq 1} e^{-rt} g_t.$$
+
+
+### Observation model
+
+We consider a common situation in epidemic situational awareness where the available data is a time series of counts $y(t)$ for time indices $t = 1, 2, \dots, T$. Typically, $y(t)$ represents incident events such as confirmed cases, hospital admissions, or deaths reported either daily or weekly.
+
+Our observation model consists of a sequential delay process with partial ascertainment at each stage:
+
+1. **Sequential delay mechanism**: We model the observation process as a two-stage delay cascade:
+   - First, infections $I(u)$ progress to symptom onset with delay distribution $f_{\theta_1}(d_1)$ and ascertainment fraction $\rho_1$
+   - Then, symptom onsets progress to reporting with delay distribution $f_{\theta_2}(d_2)$ and ascertainment fraction $\rho_2$
+   
+   This gives the conditional expectation:
+   $$\mu(t) = \mathbb{E}[y(t) | I] = \rho_2 \sum_{s \leq t} f_{\theta_2}(t-s) \left( \rho_1 \sum_{u \leq s} f_{\theta_1}(s-u) I(u) \right)$$
+   
+2. **Observation error**: We use a negative binomial distribution to link conditional expectations and actual observations:
+   $$y(t) | I \sim \text{NegBin}(\text{mean} = \mu(t), ~ \text{overdispersion} = \alpha).$$
+
+This approach follows common practice in software packages such as EpiNow2 and epidemia, where ascertainment is modeled through a convolution of the latent infection process with a delay distribution [@abbott2020epinow2; @abbott2021epinowcast; @scott2021epidemia].
+
+### Relationship between model formulations and transmission measures
+
+An important aspect of our framework is understanding how different model formulations relate to the transmission intensity measures. Depending on which process is modelled as primary, different measures will either:
+
+1. **Directly emerge** from the model (e.g., $R_t$ naturally emerges from a renewal process model)
+2. **Require post-processing calculation** as secondary measures (e.g., calculating $R_t$ from a growth rate model)
+
+This distinction affects how uncertainty propagates through the system. When a measure is directly modelled as the primary process, its uncertainty is explicitly represented in the model. When calculated as a secondary measure, its uncertainty depends on transformations of other uncertain quantities.
+
+For example, in a renewal model, $R_t$ is the primary measure and directly influenced by the latent process, while growth rates must be calculated from the resulting infection trajectory. Conversely, in a growth rate model, $r_t$ is primary while $R_t$ must be calculated post hoc. This framework allows us to systematically evaluate how these modeling choices affect the accuracy and uncertainty of all measures of interest.
 
 ### Simulated scenarios
 

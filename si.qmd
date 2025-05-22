@@ -92,6 +92,19 @@ In this study, we assume a negative binomial link between conditional expectatio
 
 $$y(t) | I \sim \text{NegBin}(\text{mean} = \mu(t), ~ \text{overdispersion} = \alpha).$$ 
 
+#### Example: Renewal model in the context of general model
+
+The general generative model framework we have introduced includes the renewal model with a generating process for the time-varying reproductive number. For example, to recreate the model used in Mishra et al [@mishra_derivation_2020] to analyse South Korean Covid infections we would choose:
+
+- Generating process $Z_t$ as the log time-varying reproductive number $R_t = \exp(Z_t)$.
+- The link functions $h_Z = \exp$ and $h_I$ as the identity map.
+- $f_Z$ such that $Z_t$ is an AR(2) process with model parameters representing time-lag correlation and noise standard deviation,
+  $$Z_t = \rho_1 Z_{t-1} + \rho_2 Z_{t-2} + \sigma^* \epsilon_t.$$
+  Where, $\rho_1$, $\rho_2$ and $\sigma^*$ are model parameters of the AR(2) process.
+- $f_I$ such that
+  $$I_t = R_t \sum_{s < t} g(t-s) I_s.$$
+  Where $g$ is the generation interval for the pathogen.
+
 ## Detailed simulation procedures
 
 ### Generation interval specification
@@ -189,7 +202,7 @@ priorpred_outcomes_df |>
   gd -> @combine(gd, :n_success = sum(:runsuccess), :n_fail = sum(1 .- :runsuccess))
 ```
 
-### Comprehensive prior specification
+### Prior specification
 
 This section provides more comprehensive information on the priors used in our models:
 
