@@ -31,106 +31,20 @@ Pkg.add(["CairoMakie", "JLD2", "DataFramesMeta", "DrWatson", "CSV"])
 using DataFramesMeta, JLD2, CSV
 ```
 
-## Mathematical Specification of generative models
+## Simulated scenarios
 
-### The infection-generating process
+### Scenarios considered but not implemented
 
-The infection incidence processes $(I_t)_{t\geq 1}$ we consider are generated using the general form,
-
-$$I_t = f_I((I_s)_{s < t}, Z_t, \theta),\qquad t \geq 1.$$
-
-Where,
-
-1. $(Z_t)_{t\geq 1}$: A latent stochastic process.
-2. $(I_s)_{s < t}$: Incidence strictly before time step $t$.
-3. $\theta_I$: Model parameters for the infection generating process including initial conditions $(I_s)_{s<1}$.
-
-Different choices of $f_I$ correspond to different *infection generating processes* (IGPs). In this study, we consider three IGPs:
-
-- *Direct infection*. This IGP uses the latent process $Z_t$ models as a log-infection incidence process:   
-  $$I_t = \exp(Z_t).$$
-- *Growth rate process.* This IGP uses the latent process $Z_t$ as the exponential growth rate $r_t = Z_t$ on each time step:
-  $$\begin{align}
-  I_t &= \exp(r_t) I_{t-1},\qquad t = 2, 3, \dots\\
-  I_1 &= \exp(r_1) I_0\qquad \text{Initial condition.}
-  \end{align}$$
-- *Renewal process.* This IGP uses the latent process $Z_t$ as the log-reproductive number $\log R_t = Z_t$.
-  $$\begin{align}
-  I_t &= R_t \sum_{s \geq 1} I_{t-s} g_s,\qquad t = 2, 3, \dots\\
-  I_1 &= R_1 \sum_{s \geq 1} I_{-s} g_s, \qquad \text{Initial condition.}
-  \end{align}$$
-
-  The parameters that determine the initial condition of the renewal model are $I_0$ and $R_1$. The initial history of latent infections $I_{-1}, I_{-2},\dots$ is constructed as
-
-  $$I_t = e^{rt} I_0,\qquad t = 0, -1, -2,...$$
-
-  Where the exponential growth rate $r$ is determined by the initial reproductive number $R_1$ via the solution to the implicit equation,
-
-  $$R_1 = 1 \Big{/} \sum_{t\geq 1} e^{-rt} g_t.$$
-
-### The latent process
-
-In the infection-generating processes (IGPs) considered above, 
-
-1. **Random walk** with unknown standard deviation $\sigma >0$, 
-   $$Z_t = Z_{t-1} + \sigma \epsilon_t.$$
-2. **Stable AR(1) process** with unknown parameters $|\psi| < 1$ and $\sigma > 0$,
-   $$Z_t = \psi Z_{t-1} + \sigma \epsilon_t.$$
-3. **Differenced AR(1) process** with unknown parameters $|\psi| < 1$ and $\sigma > 0$,
-   $$\begin{align}
-   \Delta Z_t &= \psi \Delta Z_{t-1} + \sigma \epsilon_t,\\
-   Z_t &= Z_0 + \sum_{s=1}^t\Delta Z_{s}.
-   \end{align}$$
-
-### Observation model
-
-In this study, we consider a common situation in epidemic situational awareness that the available data is a time series of counts $y(t)$ for time indices $t = 1, 2, \dots, T$. Typically, $y(t)$ will be a time series of incident events such as determined cases, hospital admissions or deaths reported either daily or weekly. As a generative model for the observed data time series $y(t)$, we invoke an underlying latent infection process $I(t)$ which represents the spread of the underlying infectious pathogen among the target population with each count element of $y(t)$ is assumed to derive, with some ascertainment delay, from a latent infection. We can model ascertainment delay using a parametric distribution function $f_\theta(d),~ d = 0, 1, 2,...$ for the probability of an ascertainment delay of $d$ times steps given distributional parameters $\theta$. Consequently, if this delay distribution does not itself vary over time, the conditional expectation for the data time series is,
-
-$$\mu(t) = \mathbb{E}[y(t) | I] = \sum_{s \leq t} f_\theta(t-s) I(s).$$
-
-In this study, we assume a negative binomial link between conditional expectations and actual observations with mean $\mu(t)$ and overdispersion parameter $\alpha$:
-
-$$y(t) | I \sim \text{NegBin}(\text{mean} = \mu(t), ~ \text{overdispersion} = \alpha).$$ 
-
-#### Example: Renewal model in the context of general model
-
-The general generative model framework we have introduced includes the renewal model with a generating process for the time-varying reproductive number. For example, to recreate the model used in Mishra et al [@mishra_derivation_2020] to analyse South Korean Covid infections we would choose:
-
-- Generating process $Z_t$ as the log time-varying reproductive number $R_t = \exp(Z_t)$.
-- The link functions $h_Z = \exp$ and $h_I$ as the identity map.
-- $f_Z$ such that $Z_t$ is an AR(2) process with model parameters representing time-lag correlation and noise standard deviation,
-  $$Z_t = \rho_1 Z_{t-1} + \rho_2 Z_{t-2} + \sigma^* \epsilon_t.$$
-  Where, $\rho_1$, $\rho_2$ and $\sigma^*$ are model parameters of the AR(2) process.
-- $f_I$ such that
-  $$I_t = R_t \sum_{s < t} g(t-s) I_s.$$
-  Where $g$ is the generation interval for the pathogen.
-
-## Detailed simulation procedures
-
-### Generation interval specification
-
-This section provides detailed information on the generation interval distributions used in our simulations, including:
-
-- The exact parameterization of the gamma distributions used for short, medium, and long generation intervals
-- Visualization of the discretized probability mass functions
-- Details of the truncation and discretization procedures applied
-- Comparison of theoretical and empirical moments after discretization
-
-### Scenario Rt trajectories
-
-This section provides detailed information on the Rt trajectories used in each scenario:
-
-- Exact mathematical specification of the Rt curves for each scenario
-- Visualization of the deterministic and noisy Rt trajectories
-- Statistical properties of the added noise
-
-### Observation model details
-
-This section elaborates on the observation model used in our simulations:
-
-- Detailed specification of the delay distribution between infection and case ascertainment
-- Implementation details of the day-of-week effects
-- Parameterization of the negative binomial observation noise
+- *Early outbreak*. Constant $R_t = R_0$ but for a short period.
+- *Early outbreak with random effects*. As *Early outbreak* scenario but with white noise jitter on $R_t$.
+- *Piecewise constant with large switches*: This scenario provides both sharp changes at the start of the timeseries and more gradual transitions towards the end. $R_t$ varies according to the following schedule:
+  - 1.1 for two weeks
+  - 2 for two weeks
+  - 0.5 for two weeks
+  - 1.5 for two weeks
+  - 0.75 for two weeks
+  - 1.1 for six weeks
+  - sine curve centered at 1 with amplitude of 0.3 afterwards
 
 ## Model validation and prior specification
 
@@ -204,7 +118,7 @@ priorpred_outcomes_df |>
 
 ### Prior specification
 
-This section provides more comprehensive information on the priors used in our models:
+This section provides more comprehensive information on the final prior specifications used in our analysis:
 
 - Complete specification of all prior distributions
 - Justification for prior choices
@@ -267,18 +181,3 @@ This section provides information on accessing and using our code:
 - Documentation of key functions and workflows
 
 ## References
-
-**Other scenarios**
-
-These scenarios were considered but not implemented in this analysis (rather than implemented and then discarded from results).
-
-- *Early outbreak*. Constant $R_t = R_0$ but for a short period.
-- *Early outbreak with random effects*. As *Early outbreak* scenario but with white noise jitter on $R_t$.
-- *Piecewise constant with large switches*: This scenario provides both sharp changes at the start of the timeseries and more gradual transitions towards the end. $R_t$ varies according to the following schedule:
-  - 1.1 for two weeks
-  - 2 for two weeks
-  - 0.5 for two weeks
-  - 1.5 for two weeks
-  - 0.75 for two weeks
-  - 1.1 for six weeks
-  - sine curve centered at 1 with amplitude of 0.3 afterwards
