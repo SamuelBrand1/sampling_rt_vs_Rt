@@ -22,7 +22,7 @@ bibliography: references.bib
 Infectious disease surveillance relies on mathematical and statistical models to generate nowcasts, forecasts, and transmission metrics.
 A common assumption is that specific infection-generating processes should be paired with particular surveillance measures, leading to debates about using epidemic growth rates versus effective reproduction numbers for situational awareness.
 
-We develop a flexible framework to systematically evaluate how different infection-generating processes perform across multiple epidemiological outcomes, explicitly examining the decoupling between generative processes and target measures. We test models across simulated scenarios with known outcomes, varying generation interval specifications to assess robustness to misspecification.
+We develop a flexible framework to systematically evaluate how different infection-generating processes perform across multiple epidemiological outcomes, explicitly examining the decoupling between generative processes and target measures. We test models across simulated scenarios with known outcomes, varying generation interval specifications to assess robustness to misspecification. We also evaluate real-world performance using the Sierre Leone 2014-2016 outbreak as a case study.
 
 [Results to be filled in]
 
@@ -34,7 +34,7 @@ Infectious disease surveillance is fundamental to public health decision-making,
 
 In nowcasting and short-term forecasting, this distinction is more widely recognised. Lison et al. [@lison] found that renewal-based generative processes improved nowcasts of effective reproduction numbers, infections, and reported cases. Renewal processes and other mechanistic models are commonly used in forecasting with the assumption that capturing the transmission mechanism improves forecast performance. However, little systematic work has explored this question, and findings from collaborative forecasting hubs remain inconclusive.
 
-We aim to systematically evaluate how infection-generating processes perform across multiple epidemiological outcomes. We develop a generic model framework informed by common practice in situational awareness modelling [@abbott2020epinow2; @abbott2021epinowcast; @scott2021epidemia; @Cori2022], enabling comparison between approaches while maintaining flexibility to capture diverse infection trajectories. Through simulation studies and real-world case studies, we evaluate key infection-generating processes with various latent processes across multiple surveillance tasks. This work contributes to the theoretical understanding of how different generative processes influence model performance and uncertainty quantification for infectious disease dynamics. Our findings provide evidence-based guidance on selecting appropriate model structures for specific public health applications, potentially improving the accuracy of epidemic monitoring, enabling more reliable forecasts for resource allocation, and enhancing overall epidemic response capabilities.
+We aim to systematically evaluate how infection-generating processes perform across multiple epidemiological outcomes. We develop a generic model framework informed by common practice in situational awareness modelling [@abbott2020epinow2; @abbott2021epinowcast; @scott2021epidemia; @Cori2022], enabling comparison between approaches while maintaining flexibility to capture diverse infection trajectories. Through simulation studies and a real-world case study, we evaluate key infection-generating processes with various latent processes across multiple surveillance tasks. This work contributes to the theoretical understanding of how different generative processes influence model performance and uncertainty quantification for infectious disease dynamics. Our findings provide evidence-based guidance on selecting appropriate model structures for specific public health applications, potentially improving the accuracy of epidemic monitoring, enabling more reliable forecasts for resource allocation, and enhancing overall epidemic response capabilities.
 
 ## Methods
 
@@ -110,7 +110,6 @@ We consider three distinct infection-generating processes, each treating a diffe
    where the exponential growth rate $r$ is determined by the initial reproductive number $R_1$ via the solution to the implicit equation,
    $$R_1 = 1 \Big{/} \sum_{t\geq 1} e^{-rt} g_t.$$
 
-
 #### Observation model
 
 We consider a common situation in epidemic situational awareness where the available data is a time series of counts $y(t)$ for time indices $t = 1, 2, \dots, T$. Typically, $y(t)$ represents incident events such as confirmed cases, hospital admissions, or deaths reported either daily or weekly.
@@ -124,7 +123,7 @@ Our observation model consists of a sequential delay process with partial ascert
    This gives the conditional expectation:
    $$\mu(t) = \mathbb{E}[y(t) | I] = \rho_2 \sum_{s \leq t} f_{\theta_2}(t-s) \left( \rho_1 \sum_{u \leq s} f_{\theta_1}(s-u) I(u) \right)$$
 
-   We convolving the delay from infection to onset and the delay from onset to infection into a single probability mass function.
+   Both distributions were discretised assuming double censoring [@primarycensored]. We convolved the delay from infection to onset and the delay from onset to infection into a single probability mass function.
    
 2. **Day of week ascertainment**: We modelled day of week effects using a multiplicative factor that varies by day of the week:
    $$\mu_{\text{dow}}(t) = \mu(t) \times \delta_{\text{dow}(t)}$$
@@ -179,17 +178,21 @@ See the SI for scenarios that were considered but not implemented.
 
 #### Generation intervals scenarios
 
-We use three generation intervals (GIs), corresponding to pathogens with short, medium, and long GIs for each infectious disease scenario. The GIs are implemented as Gamma distributions with a fixed standard deviation of 2.0 days and varying means. These continuous distributions are discretized using double interval censoring (assuming a uniform distribution over each daily time interval) as implemented in the `censored_pmf` function in the EpiAware framework, with the default truncation at the 99th percentile of the distribution.
+We use three generation intervals (GIs), corresponding to pathogens with short, medium, and long GIs for each infectious disease scenario. The GIs are implemented as Gamma distributions with a fixed standard deviation of 2.0 days and varying means. These continuous distributions are discretized using double interval censoring (assuming a uniform distribution over each daily time interval) using the approach oF [@primarycensored], with the default truncation at the 99th percentile of the distribution.
 
 1. **Short:** Gamma(shape = 1.0, scale = 2.0) with a mean of 2.0 days and a standard deviation of 2.0 days. This corresponds approximately to influenza A, as referenced in Wallinga & Lipsitch, 2006.
 2. **Medium:** Gamma(shape = 25.0, scale = 0.4) with a mean of 10.0 days and a standard deviation of 2.0 days.
 3. **Long:** Gamma(shape = 100.0, scale = 0.2) with a mean of 20.0 days and a standard deviation of 2.0 days.
 
-These distributions are specified by their mean and standard deviation in the code, with the shape parameter calculated as (mean/std)² and the scale parameter calculated as std²/mean. The discretized probability mass functions are normalized to sum to 1.
+The discretized probability mass functions are normalized to sum to 1.
 
 ### Inference scenarios
 
 Each simulated scenario was extended by considering three model configurations with different generation interval specifications: correct (matching that used in the simulation), too short (mean reduced to 50% of the simulated value), and too long (mean increased to 200% of the simulated value). This variation in assumed generation time distributions was applied to each model configuration while maintaining the generation time distribution used to simulate the underlying scenario data.
+
+### Case study: Sierre Leone 2014-2016 Ebola virus disease
+
+We used data from the 2014-2016 Sierra Leone Ebola virus disease (EVD) epidemic [@Fang2016]. These data contained symptom onset dates and sample test dates for EVD cases in Sierra Leone from May 2014 through September 2015. We used delay distribution estimates from [@Park2024.01.12.24301247] and a estimate for the delay from infection to onset from [@CITATION]. We used the same generation time estimate as [@CITATION]. We estimated all target measures using four 60-day observation windows (0-60, 60-120, 120-180, and 180-240 days after the first symptom onset) following[@Park2024.01.12.24301247].
 
 ### Implementation
 
@@ -213,7 +216,7 @@ We managed model fitting via a Julia module, again using a struct based approach
 
 #### Posterior prediction
 
-We fit models to each day and time series being evaluated and visualise posterior predictions of all measures. We assessed coverage, the CRPS, and the CRPS of log-transformed data for all observables, scaling all metrics where possible by the performance of the renewal process infection-generating model and stratifying by the target measure. In addition to overall metrics, we report performance by horizon aggregated by week for the following horizons (-4, -2, -1, 0, 1, 2) and over time. Performance is reported both overall and by scenario and case study.
+We fit models to each day, for the simulated scenarios, and for the specified time points in the case times, and visualised posterior predictions of all measures. We assessed coverage, the CRPS, and the CRPS of log-transformed data for all observables, scaling all metrics by the performance of the renewal process infection-generating model and stratifying by the target measure. In addition to overall metrics, we report performance by horizon aggregated by week for the following horizons (-4, -2, -1, 0, 1, 2) and over time. Performance is reported both overall and by scenario and case study.
 
 #### Inference efficiency
 
