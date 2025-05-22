@@ -1,5 +1,5 @@
 \documentclass{getwriting}
-\title{Evaluating the role of the infection-generating process for situational awareness of infectious diseases: Should we be using the renewal process?}
+\title{Evaluating infection-generating processes for infectious disease situational awareness: Is the renewal process necessary?}
 \author[1]{Samuel P. C. Brand \orcidlink{0000-0003-0645-5367}}
 \author[1,2]{Sam Abbott \orcidlink{0000-0001-8057-8037}}
 
@@ -11,21 +11,23 @@
 \maketitle
 
 \begin{abstract}
-Infectious disease surveillance is fundamental to effective public health decision-making. Mathematical and statistical models are increasingly being deployed to generate nowcasts, forecasts, and transmission metrics to enhance surveillance. A common assumption in the field is that specific infection-generating processes should be paired with particular surveillance measures. This has led to debates about using epidemic growth rates or effective reproduction numbers for situational awareness.
-In this work, we develop a flexible modelling framework to systematically evaluate the performance of different infection-generating processes across multiple epidemiological outcomes.
+Infectious disease surveillance relies on mathematical and statistical models to generate nowcasts, forecasts, and transmission metrics.
+A common assumption is that specific infection-generating processes should be paired with particular surveillance measures, leading to debates about using epidemic growth rates versus effective reproduction numbers for situational awareness.
+
+We develop a flexible framework to systematically evaluate how different infection-generating processes perform across multiple epidemiological outcomes, explicitly examining the decoupling between generative processes and target measures. We test models across simulated scenarios with known outcomes, varying generation interval specifications to assess robustness to misspecification.
+
 [Results to be filled in]
-This study provides evidence-based recommendations for model selection in public health surveillance applications, addressing a critical gap in our understanding of how different modelling approaches perform in various surveillance tasks.
+
+This study provides evidence-based recommendations for model selection in public health surveillance, addressing a critical gap in understanding how different modelling approaches perform across various surveillance tasks.
 \end{abstract}
 
 \section{Introduction}
 
-Infectious disease surveillance is fundamental to effective public health decision-making, and mathematical and statistical models are increasingly being deployed to enhance situational awareness for this purpose. These models can generate a variety of measures including nowcasts of current disease burden, short-term forecasts, and estimates of transmission intensity such as the effective reproduction number and epidemic growth rate.
+Infectious disease surveillance is fundamental to public health decision-making, with mathematical models increasingly deployed to generate nowcasts, forecasts, and transmission intensity measures such as the effective reproduction number and epidemic growth rate. The relationship between infection-generating processes and their target measures is often assumed but rarely examined. Recent literature has focused on comparing epidemic growth rates with effective reproduction numbers for situational awareness, conflating two distinct questions: which measure provides better situational awareness, and which process better models the infection-generating mechanism.
 
-The existence of a relationship between the infection-generating process used in these models and their target measures is often assumed. An example is the recent focus on the epidemic growth rate compared to the estimation of effective reproduction numbers. The work in this area is often presented as a single question. Is it better to use the growth rate or the effective reproduction number for situational awareness? However, as the generating process and the measure can be decoupled, there are two questions: first, is the growth rate a better method of providing situational awareness than the effective reproduction number? Second, is the epidemic growth rate better for modelling the infection-generating process than the effective reproduction number?
+In nowcasting and short-term forecasting, this distinction is more widely recognised. Lison et al. \cite{lison} found that renewal-based generative processes improved nowcasts of effective reproduction numbers, infections, and reported cases. Renewal processes and other mechanistic models are commonly used in forecasting with the assumption that capturing the transmission mechanism improves forecast performance. However, little systematic work has explored this question, and findings from collaborative forecasting hubs remain inconclusive.
 
-Areas where this decoupling is more widely recognized are now forecasting and short-term forecasting. \cite{lison} found that using a renewal-based generative process improved nowcasts of the effective reproduction number, and also of infections and reported cases. Renewal processes and other more mechanistic models are often also used in the infectious disease forecasting literature with the assumption that capturing the transmission mechanism should improve the performance of the forecast on surveillance data. However, little robust work has explored this question explicitly and the findings from collaborative forecasting hubs are inconclusive.
-
-We aim to systematically evaluate how infection-generating processes perform across multiple epidemiological outcomes, explicitly examining the decoupling between generative processes and target measures. We first develop a generic model framework, informed by common practice in the situational awareness modelling literature \cite{abbott2020epinow2, abbott2021epinowcast, scott2021epidemia, Cori2022}, that enables comparison between different approaches while maintaining sufficient flexibility to capture a wide range of infection trajectories. Through both simulation studies and real-world case studies, we evaluate the performance of key infection-generating processes combined with various latent processes across multiple surveillance tasks. We then use this evaluation to provide evidence-based guidance on selecting the appropriate model structures for specific public health applications.
+We aim to systematically evaluate how infection-generating processes perform across multiple epidemiological outcomes. We develop a generic model framework informed by common practice in situational awareness modelling \cite{abbott2020epinow2, abbott2021epinowcast, scott2021epidemia, Cori2022}, enabling comparison between approaches while maintaining flexibility to capture diverse infection trajectories. Through simulation studies and real-world case studies, we evaluate key infection-generating processes with various latent processes across multiple surveillance tasks. This work contributes to the theoretical understanding of how different generative processes influence model performance and uncertainty quantification for infectious disease dynamics. Our findings provide evidence-based guidance on selecting appropriate model structures for specific public health applications, potentially improving the accuracy of epidemic monitoring, enabling more reliable forecasts for resource allocation, and enhancing overall epidemic response capabilities.
 
 \section{Methods}
 
