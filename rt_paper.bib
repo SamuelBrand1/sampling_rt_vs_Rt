@@ -1,0 +1,125 @@
+@article{abbott2020epinow2,
+  title={EpiNow2: estimate real-time case counts and time-varying epidemiological parameters},
+  author={Abbott, Sam and Hellewell, Joel and Sherratt, K and Gostic, K and Hickson, J and Badr, HS and DeWitt, M and Thompson, R and EpiForecasts, Funk S},
+  journal={R package version 0.1. 0},
+  year={2020}
+}
+@misc{scott2021epidemia,
+      title={Epidemia: An R Package for Semi-Mechanistic Bayesian Modelling of Infectious Diseases using Point Processes}, 
+      author={James A. Scott and Axel Gandy and Swapnil Mishra and Samir Bhatt and Seth Flaxman and H. Juliette T. Unwin and Jonathan Ish-Horowicz},
+      year={2021},
+      eprint={2110.12461},
+      archivePrefix={arXiv},
+      primaryClass={stat.CO}
+}
+@article{abbott2021epinowcast,
+  title={Epinowcast: Flexible hierarchical nowcasting},
+  author={Abbott, Sam and Lison, A and Funk, S and Pearson, C and Gruson, H},
+  journal={Zenodo},
+  year={2021}
+}
+@misc{Cori2022,
+ author={Cori, A and Kamvar, ZN and Stockwin, J and Jombart, T and Dahlqwist, E and FitzJohn, R and Thompson, R and Nash, RK and Wardle, J and Bhatia, S},  
+ year={2022},  
+ title={{EpiEstim v2.2-4: A tool to estimate time varying instantaneous reproduction number during epidemics}},  
+ publisher={GitHub},
+ journal={GitHub repository},  
+ howpublished = {\url{https://github.com/mrc-ide/EpiEstim}},  
+}
+@book{oksendal2013stochastic,
+  title={Stochastic differential equations: an introduction with applications},
+  author={Oksendal, Bernt},
+  year={2013},
+  publisher={Springer Science \& Business Media}
+}
+@book{anderson1991infectious,
+  title={Infectious diseases of humans: dynamics and control},
+  author={Anderson, Roy M and May, Robert M},
+  year={1991},
+  publisher={Oxford university press}
+}
+@article{diekmann1990definition,
+  title={On the definition and the computation of the basic reproduction ratio R 0 in models for infectious diseases in heterogeneous populations},
+  author={Diekmann, Odo and Heesterbeek, Johan Andre Peter and Metz, Johan Anton Jacob},
+  journal={Journal of mathematical biology},
+  volume={28},
+  pages={365--382},
+  year={1990},
+  publisher={Springer}
+}
+@book{keeling2011modeling,
+  title={Modeling infectious diseases in humans and animals},
+  author={Keeling, Matt J and Rohani, Pejman},
+  year={2011},
+  publisher={Princeton university press}
+}
+@article{gostic2020practical,
+  title={Practical considerations for measuring the effective reproductive number, R t},
+  author={Gostic, Katelyn M and McGough, Lauren and Baskerville, Edward B and Abbott, Sam and Joshi, Keya and Tedijanto, Christine and Kahn, Rebecca and Niehus, Rene and Hay, James A and De Salazar, Pablo M and others},
+  journal={PLoS computational biology},
+  volume={16},
+  number={12},
+  pages={e1008409},
+  year={2020},
+  publisher={Public Library of Science San Francisco, CA USA}
+}
+@article{overton_nowcasting_2023,
+	title = {Nowcasting the 2022 mpox outbreak in {England}},
+	volume = {19},
+	issn = {1553-7358},
+	url = {https://dx.plos.org/10.1371/journal.pcbi.1011463},
+	doi = {10.1371/journal.pcbi.1011463},
+	abstract = {In May 2022, a cluster of mpox cases were detected in the UK that could not be traced to recent travel history from an endemic region. Over the coming months, the outbreak grew, with over 3000 total cases reported in the UK, and similar outbreaks occurring worldwide. These outbreaks appeared linked to sexual contact networks between gay, bisexual and other men who have sex with men. Following the COVID-19 pandemic, local health systems were strained, and therefore effective surveillance for mpox was essential for managing public health policy. However, the mpox outbreak in the UK was characterised by substantial delays in the reporting of the symptom onset date and specimen collection date for confirmed positive cases. These delays led to substantial backfilling in the epidemic curve, making it challenging to interpret the epidemic trajectory in real-time. Many nowcasting models exist to tackle this challenge in epidemiological data, but these lacked sufficient flexibility. We have developed a nowcasting model using generalised additive models that makes novel use of individual-level patient data to correct the mpox epidemic curve in England. The aim of this model is to correct for backfilling in the epidemic curve and provide real-time characteristics of the state of the epidemic, including the real-time growth rate. This model benefited from close collaboration with individuals involved in collecting and processing the data, enabling temporal changes in the reporting structure to be built into the model, which improved the robustness of the nowcasts generated. The resulting model accurately captured the true shape of the epidemic curve in real time.},
+	language = {en},
+	number = {9},
+	urldate = {2024-04-11},
+	journal = {PLOS Computational Biology},
+	author = {Overton, Christopher E. and Abbott, Sam and Christie, Rachel and Cumming, Fergus and Day, Julie and Jones, Owen and Paton, Rob and Turner, Charlie and Ward, Thomas},
+	editor = {Lau, Eric H. Y.},
+	month = sep,
+	year = {2023},
+	pages = {e1011463},
+	file = {Overton et al. - 2023 - Nowcasting the 2022 mpox outbreak in England.pdf:/Users/samandfi/Zotero/storage/URWJQXLM/Overton et al. - 2023 - Nowcasting the 2022 mpox outbreak in England.pdf:application/pdf},
+}
+
+@misc{mishra_derivation_2020,
+	title = {On the derivation of the renewal equation from an age-dependent branching process: an epidemic modelling perspective},
+	shorttitle = {On the derivation of the renewal equation from an age-dependent branching process},
+	url = {http://arxiv.org/abs/2006.16487},
+	abstract = {Renewal processes are a popular approach used in modelling infectious disease outbreaks. In a renewal process, previous infections give rise to future infections. However, while this formulation seems sensible, its application to infectious disease can be diﬃcult to justify from ﬁrst principles. It has been shown from the seminal work of Bellman and Harris [2] that the renewal equation arises as the expectation of an age-dependent branching process. In this paper we provide a detailed derivation of the original Bellman Harris process. We introduce generalisations, that allow for time-varying reproduction numbers and the accounting of exogenous events, such as importations. We show how inference on the renewal equation is easy to accomplish within a Bayesian hierarchical framework. Using oﬀ the shelf MCMC packages, we ﬁt to South Korea COVID-19 case data to estimate reproduction numbers and importations. Our derivation provides the mathematical fundamentals and assumptions underpinning the use of the renewal equation for modelling outbreaks.},
+	language = {en},
+	urldate = {2024-04-16},
+	publisher = {arXiv},
+	author = {Mishra, Swapnil and Berah, Tresnia and Mellan, Thomas A. and Unwin, H. Juliette T. and Vollmer, Michaela A. and Parag, Kris V. and Gandy, Axel and Flaxman, Seth and Bhatt, Samir},
+	month = jun,
+	year = {2020},
+	note = {arXiv:2006.16487 [q-bio, stat]},
+	keywords = {Quantitative Biology - Populations and Evolution, Quantitative Biology - Quantitative Methods, Statistics - Applications},
+	file = {Mishra et al. - 2020 - On the derivation of the renewal equation from an .pdf:/Users/samandfi/Zotero/storage/LF8MC4LT/Mishra et al. - 2020 - On the derivation of the renewal equation from an .pdf:application/pdf},
+}
+@article{fraser2007estimating,
+  title={Estimating individual and household reproduction numbers in an emerging epidemic},
+  author={Fraser, Christophe},
+  journal={PloS one},
+  volume={2},
+  number={8},
+  pages={e758},
+  year={2007},
+  publisher={Public Library of Science San Francisco, USA}
+}
+@article{gneiting2007strictly,
+  title={Strictly proper scoring rules, prediction, and estimation},
+  author={Gneiting, Tilmann and Raftery, Adrian E},
+  journal={Journal of the American statistical Association},
+  volume={102},
+  number={477},
+  pages={359--378},
+  year={2007},
+  publisher={Taylor \& Francis}
+}
+@book{bjornstad2022epidemics,
+  title={Epidemics: models and data using R},
+  author={Bj{\o}rnstad, Ottar N},
+  year={2022},
+  publisher={Springer Nature}
+}

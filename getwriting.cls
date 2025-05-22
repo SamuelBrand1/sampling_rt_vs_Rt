@@ -27,6 +27,8 @@
 \RequirePackage{authblk}
 \RequirePackage[margin=1in]{geometry}
 \RequirePackage{enumitem}
+\RequirePackage{amsmath}
+\usepackage{amssymb}
 \setlist[enumerate,2]{label=\alph*)}
 \setlist[enumerate,3]{label=\roman*)}
 %macros
