@@ -1,0 +1,247 @@
+---
+title: "Supporting information: Evaluating infection-generating processes for infectious disease situational awareness: Is the renewal process necessary?"
+author:
+  - name: Samuel P. C. Brand
+    orcid: 0000-0003-0645-5367
+    affiliations:
+      - name: Center for Forecasting and Outbreak Analytics, Centers for Disease Control and Prevention, United States of America
+  - name: Sam Abbott
+    orcid: 0000-0001-8057-8037
+    affiliations:
+      - name: Centre for Mathematical Modelling of Infectious Diseases, London School of Hygiene & Tropical Medicine, London, United Kingdom
+bibliography: references.bib
+number-sections: true
+format:
+  pdf:
+    toc: true
+    number-sections: true
+    colorlinks: true
+---
+
+```{julia}
+#| echo: false
+#| eval: false
+using Pkg
+index_location = @__DIR__()
+Pkg.activate(index_location)
+Pkg.resolve()
+Pkg.instantiate()
+Pkg.add(["CairoMakie", "JLD2", "DataFramesMeta", "DrWatson", "CSV"])
+
+using DataFramesMeta, JLD2, CSV
+```
+
+## Simulated scenarios
+
+### Scenarios considered but not implemented
+
+- *Early outbreak*. Constant $R_t = R_0$ but for a short period.
+- *Early outbreak with random effects*. As *Early outbreak* scenario but with white noise jitter on $R_t$.
+- *Piecewise constant with large switches*: This scenario provides both sharp changes at the start of the timeseries and more gradual transitions towards the end. $R_t$ varies according to the following schedule:
+  - 1.1 for two weeks
+  - 2 for two weeks
+  - 0.5 for two weeks
+  - 1.5 for two weeks
+  - 0.75 for two weeks
+  - 1.1 for six weeks
+  - sine curve centered at 1 with amplitude of 0.3 afterwards
+
+## Model validation and prior specification
+
+### Prior predictive modelling with default priors and transformations
+
+As a first attempt, we used common priors for each latent process considered in this study: random walk, first order auto-regressive and differenced first-order auto-regressive. These priors were:
+
+- The initial value parameter for all latent processes was:
+$$
+Z_0 \sim \text{Normal}(\text{mean} = 0, \text{std} = 0.25).
+$$
+- The standard deviation prior for all latent processes was:
+$$
+\sigma \sim \text{HalfNormal}(\text{mean} = 0.25).
+$$
+- The damping/auto-regression parameter for the auto-regressive latent processes was:
+$$
+\rho \sim \text{Beta}(a = 0.5, b = 0.5).
+$$
+
+For direct infection and renewal models the latent process represents a log-transformed epidemiological quantity, respectively: $Z_t = \log R_t$ and $Z_t = \log I_t$. The exponential growth rate modelling we identify the exponential growth rate with the latent process $Z_t = r_t$.
+
+Using these priors we made prior predictive checks across our range of models. This was run with the pipeline script.
+
+```bash
+% julia pipeline/scripts/run_priorpred_pipeline.jl 1000
+```
+
+We noted that for a substantial number of the model configurations there were model predictive samples with such large numbers of infecteds that calls to `BigInt` caused `InexactError` exceptions. Rather than directly stop these exceptions we recorded the pattern of prior prediction failure so as to inform model improvement (Table \ref{tbl-prior-fail}).
+
+```{julia}
+#| output: false
+#| eval: false
+priorpred_dir = joinpath(@__DIR__(),"..", "pipeline/data/priorpredictive/")
+priorpred_datafiles = readdir(priorpred_dir) |>
+  fns -> filter(fn -> contains(fn, ".jld2"), fns) #filter for .jld2 files
+priorpred_outcomes_df = DataFrame()
+if !isfile(joinpath(index_location, "pass_fail_rdn1.csv"))
+  priorpred_outcomes_df = mapreduce(vcat, priorpred_datafiles) do fn
+    D = load(joinpath(priorpred_dir, fn))
+    igp = D["inference_config"]["igp"]
+    latent_model = D["inference_config"]["latent_model"]
+    gi_mean = D["inference_config"]["gi_mean"]
+    T1, T2 = split(D["inference_config"]["tspan"], "_")
+    runsuccess = D["priorpredictive"] .== "Pass"
+    df = DataFrame(
+      infection_gen_proc = igp,
+      latent_model = latent_model,
+      gi_mean = gi_mean,
+      T1 = T1,
+      T2 = T2,
+      T_diff = parse(Int, T2) - parse(Int, T1),
+      runsuccess = runsuccess,
+      )
+  end
+  CSV.write(joinpath(index_location, "pass_fail_rdn1.csv"), priorpred_outcomes_df)
+else
+  priorpred_outcomes_df = CSV.File(joinpath(index_location, "pass_fail_rdn1.csv")) |> DataFrame
+end
+```
+
+```{julia}
+#| label: tbl-prior-fail
+#| tbl-cap: Number of prior predictive successes and fails from initial prior group grouped by infection generating process and latent model.
+#| tbl-cap-location: bottom
+#| eval: false
+priorpred_outcomes_df |>
+  df -> @groupby(df, :infection_gen_proc, :latent_model) |>
+  gd -> @combine(gd, :n_success = sum(:runsuccess), :n_fail = sum(1 .- :runsuccess))
+```
+
+### Prior specification
+
+This section provides more comprehensive information on the final prior specifications used in our analysis:
+
+- Complete specification of all prior distributions
+- Justification for prior choices
+- Prior predictive check results for each model configuration
+- Visualization of prior predictive distributions for key parameters
+
+**Figure S1: Prior specification and validation (`fig-si-prior-specification`)**
+- **Panel A**: Prior distribution specifications table with parameters for each latent process (random walk, AR(1), differenced AR(1))
+- **Panel B**: Prior predictive trajectories for each infection-generating process showing epidemiologically plausible ranges
+- **Panel C**: Prior predictive check success/failure rates by model configuration (bar chart)
+- **Panel D**: Comparison of initial vs refined prior specifications showing numerical stability improvements
+
+![Prior specification and validation results. Panel A shows final prior distribution parameters, Panel B displays epidemiologically plausible trajectory ranges from prior predictive checks, Panel C presents success rates by model configuration, and Panel D compares initial versus refined specifications.](figures/si_prior_specification.png){#fig-si-prior-specification}
+
+## Model implementation details
+
+### MCMC diagnostics
+
+This section presents detailed MCMC diagnostics for our model fitting:
+
+- Convergence statistics (R-hat values) across model configurations
+- Effective sample size statistics
+- Analysis of divergent transitions and maximum tree depth warnings
+- Posterior predictive checks for each model configuration
+
+**Figure S2: MCMC convergence diagnostics (`fig-si-mcmc-diagnostics`)**
+- **Panel A**: R-hat distribution histograms by infection-generating process (3 histograms: direct, growth rate, renewal)
+- **Panel B**: Effective sample size boxplots by model configuration (9 boxplots: 3 IGP × 3 latent models)
+- **Panel C**: Divergent transition percentage heatmap (IGP × latent model × scenario)
+- **Panel D**: Example trace plots for key parameters from representative fits
+
+![MCMC convergence diagnostics across all model configurations. Panel A shows R-hat distributions by infection-generating process, Panel B presents effective sample size patterns, Panel C displays divergent transition rates, and Panel D provides example trace plots for key parameters.](figures/si_mcmc_diagnostics.png){#fig-si-mcmc-diagnostics}
+
+### Computational performance
+
+This section details the computational performance of our models:
+
+- Runtime comparisons across model configurations
+- Memory usage statistics
+- Scaling properties with dataset size
+- Recommendations for computational resources needed for each model type
+
+**Figure S3: Computational performance details (`fig-si-computational-performance`)**
+- **Panel A**: Runtime violin plots by infection-generating process (3 violins showing distribution across all scenarios)
+- **Panel B**: Memory usage scatter plot (peak memory vs dataset size) colored by model configuration
+- **Panel C**: Convergence time boxplots (time to R-hat < 1.05) by model configuration
+- **Panel D**: Efficiency frontier plot (accuracy vs computational cost) with Pareto optimal configurations highlighted
+
+![Detailed computational performance analysis. Panel A shows runtime distributions by infection-generating process, Panel B displays memory usage scaling, Panel C presents convergence time requirements, and Panel D illustrates the accuracy-efficiency trade-off frontier.](figures/si_computational_performance.png){#fig-si-computational-performance}
+
+## Detailed evaluation results
+
+### Performance by target measure
+
+This section provides detailed evaluation results for each target measure:
+
+- Comprehensive tables of performance metrics for each model and target measure
+- Statistical analysis of performance differences
+- Visualizations of performance patterns
+
+**Figure S4: Target measure performance breakdown (`fig-si-target-performance`)**
+- **Panel A**: Log-infections CRPS heatmap (IGP × latent model) with individual scenario results
+- **Panel B**: Growth rate CRPS heatmap (IGP × latent model) with individual scenario results
+- **Panel C**: Effective reproduction number CRPS heatmap (IGP × latent model) with individual scenario results
+- **Panel D**: Coverage probability comparison across target measures (grouped bar chart: IGP grouped, target measure colored)
+
+![Performance breakdown by individual target measure. Panels A-C show CRPS heatmaps for log-infections, growth rates, and effective reproduction numbers respectively, while Panel D compares coverage probabilities across target measures and model configurations.](figures/si_target_performance.png){#fig-si-target-performance}
+
+### Performance by scenario
+
+This section provides scenario-specific evaluation results:
+
+- Detailed performance metrics for each model in each scenario
+- Analysis of scenario-specific patterns in model performance
+- Case studies highlighting particularly interesting behavior
+
+**Figure S5: Individual scenario performance (`fig-si-scenario-performance`)**
+- **Panel A**: Susceptible depletion scenario CRPS by model configuration (bar chart with error bars)
+- **Panel B**: Measures scenario CRPS by model configuration (bar chart with error bars)
+- **Panel C**: Regular variation scenario CRPS by model configuration (bar chart with error bars)
+- **Panel D**: Regular variation with noise scenario CRPS by model configuration (bar chart with error bars)
+
+![Individual scenario performance breakdown. Each panel shows CRPS performance for a specific epidemiological scenario: Panel A for susceptible depletion, Panel B for intervention measures, Panel C for regular variation, and Panel D for regular variation with noise.](figures/si_scenario_performance.png){#fig-si-scenario-performance}
+
+**Figure S6: Generation interval sensitivity details (`fig-si-gi-sensitivity`)**
+- **Panel A**: CRPS degradation by GI misspecification level (line plots: -50%, -25%, correct, +25%, +50%, +100%, +200%)
+- **Panel B**: Coverage probability by GI misspecification level (same x-axis as Panel A)
+- **Panel C**: Bias analysis by GI misspecification (bias vs misspecification level)
+- **Panel D**: Example posterior predictions showing GI misspecification impact on Rt estimation
+
+![Detailed generation interval sensitivity analysis. Panel A shows performance degradation with misspecification levels, Panel B displays coverage probability changes, Panel C presents bias patterns, and Panel D provides example posterior predictions demonstrating misspecification impacts.](figures/si_gi_sensitivity.png){#fig-si-gi-sensitivity}
+
+### Sensitivity analyses
+
+This section presents results from our sensitivity analyses:
+
+- Impact of varying generation interval misspecification levels
+- Sensitivity to initial conditions and parameter settings
+- Effects of data quality and quantity on model performance
+
+**Figure S7: Extended sensitivity analysis (`fig-si-sensitivity-extended`)**
+- **Panel A**: Initial condition sensitivity (performance vs different I0 values: 50, 100, 200, 500)
+- **Panel B**: Data quantity impact (performance vs dataset length: 30, 60, 90, 120, 160 days)
+- **Panel C**: Observation noise sensitivity (performance vs overdispersion parameter: 0.01, 0.05, 0.1, 0.2)
+- **Panel D**: Day-of-week effect sensitivity (performance with/without DOW effects)
+
+![Extended sensitivity analysis results. Panel A examines initial condition sensitivity, Panel B shows data quantity impacts, Panel C displays observation noise effects, and Panel D compares performance with and without day-of-week effects.](figures/si_sensitivity_extended.png){#fig-si-sensitivity-extended}
+
+**Figure S8: Sierra Leone extended analysis (`fig-si-sierra-leone-extended`)**
+- **Panel A**: Delay distribution sensitivity (performance with ±50% delay mean and SD)
+- **Panel B**: Time series comparison (our estimates vs literature Rt estimates with credible intervals)
+- **Panel C**: Outbreak phase analysis (performance during exponential growth, peak, decline phases)
+- **Panel D**: Forecast evaluation (CRPS by horizon for 1-4 week forecasts from each analysis window)
+
+![Extended Sierra Leone case study analysis. Panel A shows sensitivity to delay distribution assumptions, Panel B compares estimates with literature values, Panel C analyzes performance by outbreak phase, and Panel D evaluates forecast performance across different horizons.](figures/si_sierra_leone_extended.png){#fig-si-sierra-leone-extended}
+
+## Code availability
+
+This section provides information on accessing and using our code:
+
+- Repository location and access instructions
+- Code structure and organization
+- Instructions for reproducing our analyses
+- Documentation of key functions and workflows
+
+## References
