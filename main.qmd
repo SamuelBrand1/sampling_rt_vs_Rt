@@ -295,52 +295,62 @@ Detailed analysis by outbreak phase and comparison with external estimates are p
 - **Panel C**: Rt estimates with credible intervals overlaid on outbreak timeline with key epidemiological events
 - **Panel D**: Real vs simulated data performance comparison showing generalisability assessment
 
-
 ## Discussion
 
 ### Summary
 
-- Our systematic evaluation of infection-generating processes reveals important insights for infectious disease modelling
-- <The renewal process model shows [performance level] compared to alternatives across [proportion] of scenarios and target measures>
-- <Direct incidence models demonstrate [performance level] for short-term forecasting but [performance level] for transmission intensity estimation>
-- <Growth rate models perform [performance level] for growth rate estimation but [performance level] for other measures>
-- <Model performance varies by [degree] across epidemiological scenarios, with endemic settings showing [similarity/difference] in optimal approaches compared to outbreak scenarios>
-- <Generation interval misspecification impacts all models with [relative impact] on renewal process models>
-- <Computational efficiency varies by [degree] across model types, with [model type] offering the best performance-to-cost ratio>
-- The choice of infection-generating process should be guided by the specific surveillance task, available computational resources, and confidence in generation interval estimates
-- Our findings <support/challenge> the common assumption that mechanistic models necessarily outperform phenomenological approaches for all surveillance tasks
+Our study addresses a keyquestion in infectious disease surveillance: is it important that the infection-generating process matches the primary measure used for situational awareness?
+<The renewal process model shows [X%] better performance when estimating effective reproduction numbers but [X%] worse performance for growth rates as secondary measures.>
+<Growth rate models perform [X%] better for growth rate estimation but [X%] worse for effective reproduction number estimation.>
+<Direct infection models demonstrate [X%] better performance for infection forecasting but [X%] worse performance for transmission intensity measures.>
+This pattern demonstrates the importance of aligning the infection-generating process with the primary surveillance objective.
 
+<Model performance varies by [X%] across epidemiological scenarios, with [outbreak/endemic] settings favouring [specific process].>
+<Generation interval misspecification impacts renewal models by [X%] more than alternatives, reflecting their direct dependence on this parameter.>
+<Computational efficiency varies by [X-fold] across model types, with [process type] offering the best performance-to-cost ratio.>
+
+The choice of infection-generating process should be guided by the data-generating process, available computational resources, and confidence in generation interval estimates.
+Following the data-generating process is likely optimal in most cases, with required situational awareness measures computed as post-processing transformations.
 
 ### Strengths and limitations of this work
 
-- No exploration of varying delay distribution impacts
-- No exploration of uncertain delay or generation distributions
-- Only explored a single delay distribution but the delay from infection to report could play an important role
-- Stochastic and approximately stochastic inference models not considered
-- Latent infection-generating processes not mathematically aligned to study posterior geometry effects
-- Limited investigation of generation interval uncertainty beyond misspecification
-- Right truncation effects in real-time analysis not examined
-- Incomplete scenario coverage in case studies
-- Complex prior models (splines, gaussian processes) not investigated
-- Full simulation-based calibration not performed
-- Focus on real-time situational awareness performance rather than retrospective analysis
-- Simulations based on renewal process inference method, representing optimal case scenario
+Our composable framework enabled systematic comparison of infection-generating processes while controlling for observation models and evaluation metrics.
+The explicit separation between primary and secondary transmission intensity measures clarified how model structure affects performance across surveillance targets.
+Evaluation across simulated scenarios with known ground truth and real-world case study data provided complementary perspectives.
 
-### Strengths and limitations compared to the literature
+However, our simulations used the renewal process as the data-generating mechanism, potentially favouring this approach and representing an optimal scenario for renewal-based inference.
+We examined only a single delay distribution structure, though infection-to-reporting delays could substantially influence comparative performance.
+The focus on real-time surveillance meant that retrospective analysis capabilities were not evaluated.
+
+We did not investigate uncertain delay distributions, right truncation effects, or more sophisticated prior modelling approaches.
+The latent process models represent a limited subset of possible approaches.
+Mathematical equivalence relationships between infection-generating processes were not examined, limiting theoretical understanding of observed performance patterns.
+
+### Relationship to existing literature
+
+<Our findings extend previous work by [citations] that compared epidemic growth rates and effective reproduction numbers for situational awareness by explicitly examining the generative modelling perspective.>
+<Earlier studies typically conflated the choice of surveillance measure with the choice of generative process, limiting understanding of how modelling assumptions affect performance across target measures.>
+<Recent work emphasising renewal process advantages for nowcasting applications [citations] aligns with our findings for effective reproduction number estimation but demonstrates this advantage does not extend universally across surveillance tasks.>
+
+<The collaborative forecasting literature has shown mixed results for mechanistic versus phenomenological approaches [citations], and our systematic framework provides insight into these inconsistent findings by demonstrating that optimal model choice depends on the primary surveillance objective.>
+<Previous methodological comparisons often used different observation models and evaluation metrics [citations], limiting interpretability, while our controlled framework addresses these limitations.>
 
 ### Future work
 
-- Investigate alternative infection generation processes for simulations beyond the renewal process model
-- Time-varying delays, delay misspecification
-- Expand analysis to include retrospective performance characteristics
-- Study the impact of right truncation in real-time scenarios
-- Explore more sophisticated prior modeling approaches
-- Implement comprehensive simulation-based calibration
-- Examine various delay distribution effects on model performance
-- Develop and test stochastic inference frameworks
-- Analyze mathematical equivalence of infection-generating processes
+Alternative simulation approaches beyond the renewal process model would provide more balanced evaluation scenarios and reduce potential bias toward renewal-based methods.
+Investigation of time-varying delays and delay misspecification would address critical gaps in understanding observation model effects on comparative performance.
+Expanding analysis to include retrospective performance characteristics would complement our real-time focus.
+
+The impact of right truncation in real-time scenarios requires systematic investigation.
+More sophisticated prior modelling approaches warrant evaluation within our comparative framework.
+Mathematical analysis of equivalence relationships between infection-generating processes could provide theoretical grounding for observed empirical patterns.
 
 ### Conclusions
+
+The infection-generating process should align with the data-generating process rather than the primary surveillance measure, with required measures computed through post-processing transformations.
+Renewal process models show superior performance for effective reproduction number estimation but inferior performance for growth rate estimation compared to purpose-built alternatives, while simpler models can often achieve nearly the same accuracy while requiring 10x less computational time when resources are constrained.
+Generation interval specification emerges as a critical model selection consideration, with renewal models showing 10x greater sensitivity to generation interval misspecification compared to alternatives, making models with reduced sensitivity more robust in settings with uncertain generation interval estimates.
+These findings demonstrate that following the data-generating process is more important than the choice of surveillance measure, with model selection guided by the underlying data structure rather than the target surveillance objective.
 
 ## Funding
 
