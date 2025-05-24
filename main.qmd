@@ -260,18 +260,32 @@ Detailed computational analysis including runtime scaling and memory usage is pr
 - **Panel C**: Computational efficiency scatter plot (effective sample size/second vs CRPS accuracy trade-offs)
 - **Panel D**: Coverage probability assessment showing 95% credible interval coverage across models and target measures
 
+### Performance by generation interval specification
+
+Generation interval misspecification impacted all models when estimating effective reproduction numbers, but only affected renewal process models when estimating other target measures (Figure @fig-gi-misspecification).
+When generation intervals were misspecified as too short, all infection-generating processes showed <percentage>% performance degradation for Rt estimation, while only renewal models showed degradation for growth rate and infection targets (Figure @fig-gi-misspecification, Panel A).
+Too-long generation interval specifications resulted in <different impact> across target measures, with renewal models consistently affected regardless of target while direct infection and growth rate models remained robust when estimating their respective primary measures (Figure @fig-gi-misspecification, Panel B).
+Coverage probabilities remained <stable/degraded> under generation interval misspecification, with <process type> maintaining <percentage>% nominal coverage compared to <comparison> (Figure @fig-gi-misspecification, Panel C).
+Computational efficiency showed <pattern> under misspecification, with <process type> requiring <relative time> additional computation when generation intervals were incorrectly specified (Figure @fig-gi-misspecification, Panel D).
+
+**Figure 2: Generation Interval Misspecification Impact (`fig-gi-misspecification`)**
+
+- **Panel A**: Performance degradation by target measure showing differential sensitivity across infection-generating processes (heatmap: process × target measure × GI specification)
+- **Panel B**: Relative performance under GI misspecification compared to correct specification, stratified by primary vs secondary target measures
+- **Panel C**: Coverage probability assessment under generation interval misspecification showing uncertainty quantification robustness
+- **Panel D**: Computational efficiency impact of generation interval misspecification showing relative runtime changes across processes
+
+
 
 #### Performance by epidemiological scenario
 
 Model performance showed <substantial/modest> variation across epidemiological contexts (Figure @fig-scenario-performance, Panel A).
 In outbreak scenarios, <process> demonstrated <performance level> during epidemic growth phases but <different performance> during decline phases, with detailed individual scenario results in SI Figure @fig-si-scenario-details, Panels A-B.
 Endemic scenarios with regular transmission variation favoured <process type>, achieving <performance metric> compared to <comparison>.
-Generation interval misspecification impacted all models (Figure @fig-scenario-performance, Panel B), with <process> showing <greatest/least> sensitivity to assumptions.
-When generation intervals were misspecified as too short, performance degraded by <percentage>% on average, while too-long specifications resulted in <different impact> (SI Figure @fig-si-scenario-details, Panel C).
 Representative posterior predictions demonstrate <key finding> about model behaviour (Figure @fig-scenario-performance, Panel C).
 Computational efficiency patterns varied by epidemiological context (Figure @fig-scenario-performance, Panel D), with <specific finding> about resource requirements.
 
-**Figure 2: Scenario-Stratified Performance (`fig-scenario-performance`)**
+**Figure 3: Scenario-Stratified Performance (`fig-scenario-performance`)**
 
 - **Panel A**: CRPS comparison between outbreak vs endemic scenarios (grouped violin plots by infection-generating process)
 - **Panel B**: Impact of generation interval misspecification (correct/short/long) showing relative performance degradation
@@ -288,7 +302,7 @@ Comparison with literature estimates and sensitivity to delay distribution assum
 Real-world data complexity resulted in <increased/similar> computational demands (Figure @fig-case-study-performance, Panel D), with <efficiency comparison> compared to simulated scenarios.
 Detailed analysis by outbreak phase and comparison with external estimates are presented in SI Figure @fig-si-case-study-details, Panels C-D.
 
-**Figure 3: Sierra Leone Case Study (`fig-case-study-performance`)**
+**Figure 4: Sierra Leone Case Study (`fig-case-study-performance`)**
 
 - **Panel A**: Performance across four 60-day analysis windows showing temporal progression through outbreak
 - **Panel B**: Forecast horizon analysis comparing real-world vs simulated data performance patterns
@@ -299,7 +313,7 @@ Detailed analysis by outbreak phase and comparison with external estimates are p
 
 ### Summary
 
-Our study addresses a keyquestion in infectious disease surveillance: is it important that the infection-generating process matches the primary measure used for situational awareness?
+Our study addresses a key question in infectious disease surveillance: is it important that the infection-generating process matches the primary measure used for situational awareness?
 <The renewal process model shows [X%] better performance when estimating effective reproduction numbers but [X%] worse performance for growth rates as secondary measures.>
 <Growth rate models perform [X%] better for growth rate estimation but [X%] worse for effective reproduction number estimation.>
 <Direct infection models demonstrate [X%] better performance for infection forecasting but [X%] worse performance for transmission intensity measures.>
