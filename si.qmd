@@ -125,6 +125,14 @@ This section provides more comprehensive information on the final prior specific
 - Prior predictive check results for each model configuration
 - Visualization of prior predictive distributions for key parameters
 
+**Figure S1: Prior specification and validation (`fig-si-prior-specification`)**
+- **Panel A**: Prior distribution specifications table with parameters for each latent process (random walk, AR(1), differenced AR(1))
+- **Panel B**: Prior predictive trajectories for each infection-generating process showing epidemiologically plausible ranges
+- **Panel C**: Prior predictive check success/failure rates by model configuration (bar chart)
+- **Panel D**: Comparison of initial vs refined prior specifications showing numerical stability improvements
+
+![Prior specification and validation results. Panel A shows final prior distribution parameters, Panel B displays epidemiologically plausible trajectory ranges from prior predictive checks, Panel C presents success rates by model configuration, and Panel D compares initial versus refined specifications.](figures/si_prior_specification.png){#fig-si-prior-specification}
+
 ## Model implementation details
 
 ### MCMC diagnostics
@@ -136,6 +144,14 @@ This section presents detailed MCMC diagnostics for our model fitting:
 - Analysis of divergent transitions and maximum tree depth warnings
 - Posterior predictive checks for each model configuration
 
+**Figure S2: MCMC convergence diagnostics (`fig-si-mcmc-diagnostics`)**
+- **Panel A**: R-hat distribution histograms by infection-generating process (3 histograms: direct, growth rate, renewal)
+- **Panel B**: Effective sample size boxplots by model configuration (9 boxplots: 3 IGP × 3 latent models)
+- **Panel C**: Divergent transition percentage heatmap (IGP × latent model × scenario)
+- **Panel D**: Example trace plots for key parameters from representative fits
+
+![MCMC convergence diagnostics across all model configurations. Panel A shows R-hat distributions by infection-generating process, Panel B presents effective sample size patterns, Panel C displays divergent transition rates, and Panel D provides example trace plots for key parameters.](figures/si_mcmc_diagnostics.png){#fig-si-mcmc-diagnostics}
+
 ### Computational performance
 
 This section details the computational performance of our models:
@@ -144,6 +160,14 @@ This section details the computational performance of our models:
 - Memory usage statistics
 - Scaling properties with dataset size
 - Recommendations for computational resources needed for each model type
+
+**Figure S3: Computational performance details (`fig-si-computational-performance`)**
+- **Panel A**: Runtime violin plots by infection-generating process (3 violins showing distribution across all scenarios)
+- **Panel B**: Memory usage scatter plot (peak memory vs dataset size) colored by model configuration
+- **Panel C**: Convergence time boxplots (time to R-hat < 1.05) by model configuration
+- **Panel D**: Efficiency frontier plot (accuracy vs computational cost) with Pareto optimal configurations highlighted
+
+![Detailed computational performance analysis. Panel A shows runtime distributions by infection-generating process, Panel B displays memory usage scaling, Panel C presents convergence time requirements, and Panel D illustrates the accuracy-efficiency trade-off frontier.](figures/si_computational_performance.png){#fig-si-computational-performance}
 
 ## Detailed evaluation results
 
@@ -155,6 +179,14 @@ This section provides detailed evaluation results for each target measure:
 - Statistical analysis of performance differences
 - Visualizations of performance patterns
 
+**Figure S4: Target measure performance breakdown (`fig-si-target-performance`)**
+- **Panel A**: Log-infections CRPS heatmap (IGP × latent model) with individual scenario results
+- **Panel B**: Growth rate CRPS heatmap (IGP × latent model) with individual scenario results
+- **Panel C**: Effective reproduction number CRPS heatmap (IGP × latent model) with individual scenario results
+- **Panel D**: Coverage probability comparison across target measures (grouped bar chart: IGP grouped, target measure colored)
+
+![Performance breakdown by individual target measure. Panels A-C show CRPS heatmaps for log-infections, growth rates, and effective reproduction numbers respectively, while Panel D compares coverage probabilities across target measures and model configurations.](figures/si_target_performance.png){#fig-si-target-performance}
+
 ### Performance by scenario
 
 This section provides scenario-specific evaluation results:
@@ -163,6 +195,22 @@ This section provides scenario-specific evaluation results:
 - Analysis of scenario-specific patterns in model performance
 - Case studies highlighting particularly interesting behavior
 
+**Figure S5: Individual scenario performance (`fig-si-scenario-performance`)**
+- **Panel A**: Susceptible depletion scenario CRPS by model configuration (bar chart with error bars)
+- **Panel B**: Measures scenario CRPS by model configuration (bar chart with error bars)
+- **Panel C**: Regular variation scenario CRPS by model configuration (bar chart with error bars)
+- **Panel D**: Regular variation with noise scenario CRPS by model configuration (bar chart with error bars)
+
+![Individual scenario performance breakdown. Each panel shows CRPS performance for a specific epidemiological scenario: Panel A for susceptible depletion, Panel B for intervention measures, Panel C for regular variation, and Panel D for regular variation with noise.](figures/si_scenario_performance.png){#fig-si-scenario-performance}
+
+**Figure S6: Generation interval sensitivity details (`fig-si-gi-sensitivity`)**
+- **Panel A**: CRPS degradation by GI misspecification level (line plots: -50%, -25%, correct, +25%, +50%, +100%, +200%)
+- **Panel B**: Coverage probability by GI misspecification level (same x-axis as Panel A)
+- **Panel C**: Bias analysis by GI misspecification (bias vs misspecification level)
+- **Panel D**: Example posterior predictions showing GI misspecification impact on Rt estimation
+
+![Detailed generation interval sensitivity analysis. Panel A shows performance degradation with misspecification levels, Panel B displays coverage probability changes, Panel C presents bias patterns, and Panel D provides example posterior predictions demonstrating misspecification impacts.](figures/si_gi_sensitivity.png){#fig-si-gi-sensitivity}
+
 ### Sensitivity analyses
 
 This section presents results from our sensitivity analyses:
@@ -170,6 +218,22 @@ This section presents results from our sensitivity analyses:
 - Impact of varying generation interval misspecification levels
 - Sensitivity to initial conditions and parameter settings
 - Effects of data quality and quantity on model performance
+
+**Figure S7: Extended sensitivity analysis (`fig-si-sensitivity-extended`)**
+- **Panel A**: Initial condition sensitivity (performance vs different I0 values: 50, 100, 200, 500)
+- **Panel B**: Data quantity impact (performance vs dataset length: 30, 60, 90, 120, 160 days)
+- **Panel C**: Observation noise sensitivity (performance vs overdispersion parameter: 0.01, 0.05, 0.1, 0.2)
+- **Panel D**: Day-of-week effect sensitivity (performance with/without DOW effects)
+
+![Extended sensitivity analysis results. Panel A examines initial condition sensitivity, Panel B shows data quantity impacts, Panel C displays observation noise effects, and Panel D compares performance with and without day-of-week effects.](figures/si_sensitivity_extended.png){#fig-si-sensitivity-extended}
+
+**Figure S8: Sierra Leone extended analysis (`fig-si-sierra-leone-extended`)**
+- **Panel A**: Delay distribution sensitivity (performance with ±50% delay mean and SD)
+- **Panel B**: Time series comparison (our estimates vs literature Rt estimates with credible intervals)
+- **Panel C**: Outbreak phase analysis (performance during exponential growth, peak, decline phases)
+- **Panel D**: Forecast evaluation (CRPS by horizon for 1-4 week forecasts from each analysis window)
+
+![Extended Sierra Leone case study analysis. Panel A shows sensitivity to delay distribution assumptions, Panel B compares estimates with literature values, Panel C analyzes performance by outbreak phase, and Panel D evaluates forecast performance across different horizons.](figures/si_sierra_leone_extended.png){#fig-si-sierra-leone-extended}
 
 ## Code availability
 

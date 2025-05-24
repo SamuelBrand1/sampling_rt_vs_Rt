@@ -228,30 +228,73 @@ The evaluation framework uses the scoringutils and scoringRules R packages for q
 
 ## Results {#sec-results}
 
+We evaluated <number> model configurations across <number> simulated scenarios and one real-world case study.
+Each configuration combined one of three infection-generating processes (direct infection, growth rate, renewal) with one of three latent models (random walk, AR(1), differenced AR(1)) under three generation interval specifications (correct, too short, too long).
+All models were assessed on their ability to estimate three target measures: log-infections, time-varying growth rates, and effective reproduction numbers.
+Model performance was evaluated using CRPS for posterior predictive accuracy, coverage probabilities for uncertainty quantification, and computational efficiency metrics.
+
 ### Validation
 
-Say if it looked okay and reference SI.
+Prior predictive checks confirmed that our model specifications produced epidemiologically plausible trajectories across all infection-generating processes and latent model combinations (see the SI).
+Initial default priors resulted in <percentage>% model failure rates due to numerical overflow in <specific processes>, leading us to refine prior specifications as detailed in SI.
+Final prior specifications achieved <success rate>% successful prior predictive sampling across all model configurations.
+
+Posterior predictive checks on held-out simulated data demonstrated adequate model calibration and convergence, both for each sub-model and for the full model configurations.
 
 ### Simulated scenarios
 
-#### Overall
+#### Overall performance across all scenarios
 
-- Overall summary figure of posterior prediction performance and comment
-- Sub panel looking at performance by horizon
-- Overall summary figure looking at inference efficiency
+Figure @fig-overall-performance summarises model performance across all simulated scenarios and target measures.
+<Process type> achieved the <best/worst> overall performance with a mean scaled CRPS of <value> (95% CI: <range>) across all target measures (Figure @fig-overall-performance, Panel A).
+Performance varied substantially by target measure, with detailed breakdowns shown in SI Figure @fig-si-target-measures.
+All models demonstrated <degrading/stable> performance with increasing forecast horizon, with accuracy declining by <percentage>% at 2-week forecasts compared to nowcasts (Figure @fig-overall-performance, Panel B).
+Coverage probability assessment revealed <finding> about uncertainty quantification across models (Figure @fig-overall-performance, Panel D).
+Computational efficiency varied by <factor>, with <process> requiring <relative time> compared to the renewal process baseline while achieving <relative accuracy> (Figure @fig-overall-performance, Panel C).
+Detailed computational analysis including runtime scaling and memory usage is presented in SI Figure @fig-si-computational.
 
-#### Stratified by scenario
+**Figure 1: Overall Performance (`fig-overall-performance`)**
 
-- By scenario summary of posterior prediction performance repeated for all scenarios
-- By scenario summary of inference efficiency performance
-- Example visualisation by scenario
+- **Panel A**: CRPS performance heatmap (infection-generating process × target measure) scaled relative to renewal process baseline
+- **Panel B**: Performance by forecast horizon (-4 to +2 weeks) showing mean CRPS with confidence intervals across all scenarios
+- **Panel C**: Computational efficiency scatter plot (effective sample size/second vs CRPS accuracy trade-offs)
+- **Panel D**: Coverage probability assessment showing 95% credible interval coverage across models and target measures
 
-### Case study: Sierre Leone 2014-2-16 Ebola virus disease outbreak
 
-- Overall performance
-- By time period
-- By time horizon
-- By time horizon and period.
+#### Performance by epidemiological scenario
+
+Model performance showed <substantial/modest> variation across epidemiological contexts (Figure @fig-scenario-performance, Panel A).
+In outbreak scenarios, <process> demonstrated <performance level> during epidemic growth phases but <different performance> during decline phases, with detailed individual scenario results in SI Figure @fig-si-scenario-details, Panels A-B.
+Endemic scenarios with regular transmission variation favoured <process type>, achieving <performance metric> compared to <comparison>.
+Generation interval misspecification impacted all models (Figure @fig-scenario-performance, Panel B), with <process> showing <greatest/least> sensitivity to assumptions.
+When generation intervals were misspecified as too short, performance degraded by <percentage>% on average, while too-long specifications resulted in <different impact> (SI Figure @fig-si-scenario-details, Panel C).
+Representative posterior predictions demonstrate <key finding> about model behaviour (Figure @fig-scenario-performance, Panel C).
+Computational efficiency patterns varied by epidemiological context (Figure @fig-scenario-performance, Panel D), with <specific finding> about resource requirements.
+
+**Figure 2: Scenario-Stratified Performance (`fig-scenario-performance`)**
+
+- **Panel A**: CRPS comparison between outbreak vs endemic scenarios (grouped violin plots by infection-generating process)
+- **Panel B**: Impact of generation interval misspecification (correct/short/long) showing relative performance degradation
+- **Panel C**: Representative time series showing posterior predictions vs truth for each infection-generating process
+- **Panel D**: Scenario-specific computational efficiency patterns showing relative runtime by epidemiological context
+
+### Case study: Sierra Leone 2014-2016 Ebola virus disease outbreak
+
+Application to real-world Ebola outbreak data largely confirmed patterns observed in simulated scenarios (Figure @fig-case-study-performance).
+<Process type> achieved <performance level> across the four analysis windows, with <best/worst> performance during <specific outbreak phase> (days <range>) as shown in Figure @fig-case-study-performance, Panel A.
+Forecast accuracy patterns <matched/differed from> simulated scenarios (Figure @fig-case-study-performance, Panel B), with <horizon-specific performance description>.
+Epidemiological interpretation of Rt estimates revealed <key findings> about outbreak dynamics, with estimates aligning with <external evidence/historical events> (Figure @fig-case-study-performance, Panel C).
+Comparison with literature estimates and sensitivity to delay distribution assumptions are detailed in SI Figure @fig-si-case-study-details.
+Real-world data complexity resulted in <increased/similar> computational demands (Figure @fig-case-study-performance, Panel D), with <efficiency comparison> compared to simulated scenarios.
+Detailed analysis by outbreak phase and comparison with external estimates are presented in SI Figure @fig-si-case-study-details, Panels C-D.
+
+**Figure 3: Sierra Leone Case Study (`fig-case-study-performance`)**
+
+- **Panel A**: Performance across four 60-day analysis windows showing temporal progression through outbreak
+- **Panel B**: Forecast horizon analysis comparing real-world vs simulated data performance patterns
+- **Panel C**: Rt estimates with credible intervals overlaid on outbreak timeline with key epidemiological events
+- **Panel D**: Real vs simulated data performance comparison showing generalisability assessment
+
 
 ## Discussion
 
@@ -271,6 +314,8 @@ Say if it looked okay and reference SI.
 ### Strengths and limitations of this work
 
 - No exploration of varying delay distribution impacts
+- No exploration of uncertain delay or generation distributions
+- Only explored a single delay distribution but the delay from infection to report could play an important role
 - Stochastic and approximately stochastic inference models not considered
 - Latent infection-generating processes not mathematically aligned to study posterior geometry effects
 - Limited investigation of generation interval uncertainty beyond misspecification
@@ -286,6 +331,7 @@ Say if it looked okay and reference SI.
 ### Future work
 
 - Investigate alternative infection generation processes for simulations beyond the renewal process model
+- Time-varying delays, delay misspecification
 - Expand analysis to include retrospective performance characteristics
 - Study the impact of right truncation in real-time scenarios
 - Explore more sophisticated prior modeling approaches
