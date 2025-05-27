@@ -1,0 +1,373 @@
+---
+title: "Evaluating infection-generating processes for infectious disease situational awareness: Is the renewal process necessary?"
+author:
+  - name: Samuel P. C. Brand
+    orcid: 0000-0003-0645-5367
+    affiliations:
+      - name: Center for Forecasting and Outbreak Analytics, Centers for Disease Control and Prevention, United States of America
+  - name: Sam Abbott
+    orcid: 0000-0001-8057-8037
+    affiliations:
+      - name: Centre for Mathematical Modelling of Infectious Diseases, London School of Hygiene & Tropical Medicine, London, United Kingdom
+format:
+  pdf:
+    toc: false
+    number-sections: false
+    colorlinks: true
+bibliography: references.bib
+---
+
+## Abstract
+
+Infectious disease surveillance relies on mathematical and statistical models to generate nowcasts, forecasts, and transmission metrics.
+A common assumption is that specific infection-generating processes should be paired with particular surveillance measures, leading to debates about using epidemic growth rates versus effective reproduction numbers for situational awareness.
+
+We develop a flexible framework to systematically evaluate how different infection-generating processes perform across multiple epidemiological outcomes, explicitly examining the decoupling between generative processes and target measures. We test models across simulated scenarios with known outcomes, varying generation interval specifications to assess robustness to misspecification. We also evaluate real-world performance using the Sierre Leone 2014-2016 outbreak as a case study.
+
+[Results to be filled in]
+
+This study provides evidence-based recommendations for model selection in public health surveillance, addressing a critical gap in understanding how different modelling approaches perform across various surveillance tasks.
+
+## Introduction
+
+Infectious disease surveillance is fundamental to public health decision-making, with mathematical models increasingly deployed to generate nowcasts, forecasts, and transmission intensity measures such as the effective reproduction number and epidemic growth rate. The relationship between infection-generating processes and their target measures is often assumed but rarely examined. Recent literature has focused on comparing epidemic growth rates with effective reproduction numbers for situational awareness, conflating two distinct questions: which measure provides better situational awareness, and which process better models the infection-generating mechanism.
+
+In nowcasting and short-term forecasting, this distinction is more widely recognised. Lison et al. [@lison] found that renewal-based generative processes improved nowcasts of effective reproduction numbers, infections, and reported cases. Renewal processes and other mechanistic models are commonly used in forecasting with the assumption that capturing the transmission mechanism improves forecast performance. However, little systematic work has explored this question, and findings from collaborative forecasting hubs remain inconclusive.
+
+We aim to systematically evaluate how infection-generating processes perform across multiple epidemiological outcomes. We develop a generic model framework informed by common practice in situational awareness modelling [@abbott2020epinow2; @abbott2021epinowcast; @scott2021epidemia; @Cori2022], enabling comparison between approaches while maintaining flexibility to capture diverse infection trajectories. Through simulation studies and a real-world case study, we evaluate key infection-generating processes with various latent processes across multiple surveillance tasks. This work contributes to the theoretical understanding of how different generative processes influence model performance and uncertainty quantification for infectious disease dynamics. Our findings provide evidence-based guidance on selecting appropriate model structures for specific public health applications, potentially improving the accuracy of epidemic monitoring, enabling more reliable forecasts for resource allocation, and enhancing overall epidemic response capabilities.
+
+## Methods
+
+In this section, we first introduce the transmission intensity measures used for situational awareness and considered in this study. Second, we describe the components of our generic model framework that we use to construct different model-based approaches to estimating these measures. Third, we describe the experimental matrix of generative models, along with different time points, forecast horizons, and potential misspecification of the underlying generation interval. Fourth, we describe the surveillance task scenarios that we consider, including both simulated epidemics and real-world case studies. Finally, we outline the implementation details and define the evaluation metrics for this implementation.
+
+### Transmission intensity measures for situational awareness
+
+We consider three transmission intensity measures ($T(t)$) that are commonly used targets for real-time surveillance and can be defined from a time series of latent infections ($I(t)$):
+
+- **Logarithmic transformation of latent infections** $T(t) = \ln I(t)$, which directly measures the scale of the epidemic on a logarithmic scale.
+- **Time-varying growth rate**, $T(t) = r(t) = \ln (I(t) / I(t-1))$, which quantifies the relative change in infections between consecutive time steps.
+- **Time-varying instantaneous reproductive number** $T(t) = \mathcal{R}(t) = I(t) / [I \circ g](t)$, where $x\circ y$ is the discrete convolution of vectors $x$ and $y$, and $g$ represents the generation interval distribution [@abbott2020epinow2; @abbott2021epinowcast; @scott2021epidemia; @Cori2022]. This measures the average number of secondary infections caused by each primary infection.
+
+These measures provide different perspectives on epidemic dynamics and are used for different aspects of situational awareness. The direct transformation between latent infections $I(t)$ and derived measures such as $\mathcal{R}(t)$ raises an important question: which process should be treated as generative and which should be calculated as a transformation of the other? This distinction is central to our analysis.
+
+### Generative model framework for epidemiological data
+
+We use a composable generative model framework, as illustrated in Figure @fig-model-composition, that allows us to systematically experiment with different approaches to estimating the transmission intensity measures. A generative model specifies the full joint probability distribution of all variables in a system, both observed and unobserved, and can be used to simulate complete epidemiological trajectories. Our framework decomposes the generative process into distinct components that can be swapped in and out as modules, enabling us to isolate the effects of specific modelling choices while maintaining a consistent overall structure.
+
+In our framework, each generative model defines one tranmission intensity measure as being *primary* ($T_p(t)$). This primary process is directly modelled through a stochastic process. Other transmission intensity measures (which we call *secondary* ($T_s(t)$)) are then calculated as transformations of the latent infections generated by transforming the primary process. This distinction allows us to evaluate how different choices of primary processes affect the estimation of all epidemiological measures of interest. This construction allows us to flexibility reproduce a range of methods for estimating the transmission intensity measures that have been proposed in the literature including the renewal process, growth rate process, and direct infection process [@abbott2020epinow2; @abbott2021epinowcast; @scott2021epidemia; @Cori2022].
+
+![Directed graph representing the generative model components. Shown are model choices we experiment over in this study (green rectangles), the observation model (which is fixed in this study; blue rectangle), and generated quantities (red boxes). The generated quantities are split between a primary transmission intensity measure $T(t)$ which composes with the infection-generating process to generate latent infections, and secondary transmission intensity measures. All transmission intensity measures are targets for surveillance. Each modelled quantity can be constructed conditional on parent quantities on the graph (directed edges).](figures/model_composition.png){#fig-model-composition}
+
+#### Model components
+
+We divide our generative model for epidemiological data into three key components:
+
+1. **The latent process** $Z(t)$ drives the dynamics of the **primary** transmission intensity measure via a transformation $T_p(t) = f(Z(t))$. This component can be used to introduce stochasticity into the system and can take various forms such as random walks or autoregressive processes.
+1. **The infection-generating process** specifies how new latent incidence over time $t$, $I(t)$, depends on past incidence $\{I(s),~s < t\}$ and the primary transmission intensity measure $T_p(t)$. From $I(t)$ we can then calculate the secondary transmission intensity measures $T_s(t)$ via a transformation $T_s(t) = g(I(t))$.
+3. **The observation model** defines how the trajectory of latent infections $\{I(s),~s \leq t\}$ is transformed into expected epidemiological data counts $Y(t)$ and specifies the probabilistic link between these expected counts and actual observations $y(t)$.
+
+These components compose to define the full generative model, with each component depending on specific choices made for the others, as illustrated in Figure @fig-model-composition.
+
+#### Latent process models
+
+The primary transmission intensity measure is defined by a stochastic latent process $Z_t$. We consider three latent process models:
+
+1. **Random walk** with unknown standard deviation $\sigma >0$: 
+   $$Z_t = Z_{t-1} + \sigma \epsilon_t.$$
+
+2. **Stable AR(1) process** with unknown parameters $|\psi| < 1$ and $\sigma > 0$:
+   $$Z_t = \psi Z_{t-1} + \sigma \epsilon_t.$$
+
+3. **Differenced AR(1) process** with unknown parameters $|\psi| < 1$ and $\sigma > 0$:
+   $$\begin{align}
+   \Delta Z_t &= \psi \Delta Z_{t-1} + \sigma \epsilon_t,\\
+   Z_t &= Z_0 + \sum_{s=1}^t\Delta Z_{s}.
+   \end{align}$$
+
+Where $\epsilon_t \sim \text{Normal}(0,1)$ are independent standard normal random variables. These latent processes could potentially be applied to any component of the model framework, though in this study we focus on their application to the infection-generating process. Our choice of latent processes is motivated by those commonly used in the literature [@abbott2020epinow2; @abbott2021epinowcast; @scott2021epidemia; @Cori2022].
+
+#### Infection-generating processes
+
+We consider three distinct infection-generating processes, each treating a different transmission intensity measure as primary:
+
+1. **Direct infection process** uses the latent process $Z_t$ to model log-infection incidence directly:   
+   $$I_t = \exp(Z_t).$$
+
+2. **Growth rate process** uses the latent process $Z_t$ as the exponential growth rate $r_t = Z_t$ on each time step:
+   $$\begin{align}
+   I_t &= \exp(r_t) I_{t-1},\qquad t = 2, 3, \dots\\
+   I_1 &= \exp(r_1) I_0\qquad \text{Initial condition.}
+   \end{align}$$
+
+3. **Renewal process** uses the latent process $Z_t$ as the log-reproductive number $\log R_t = Z_t$:
+   $$\begin{align}
+   I_t &= R_t \sum_{s \geq 1} I_{t-s} g_s,\qquad t = 2, 3, \dots\\
+   I_1 &= R_1 \sum_{s \geq 1} I_{-s} g_s, \qquad \text{Initial condition.}
+   \end{align}$$
+
+   The parameters that determine the initial condition of the renewal model are $I_0$ and $R_1$. The initial history of latent infections $I_{-1}, I_{-2},\dots$ is constructed as
+   $$I_t = e^{rt} I_0,\qquad t = 0, -1, -2,...$$
+   where the exponential growth rate $r$ is determined by the initial reproductive number $R_1$ via the solution to the implicit equation,
+   $$R_1 = 1 \Big{/} \sum_{t\geq 1} e^{-rt} g_t.$$
+
+#### Observation model
+
+We consider a common situation in epidemic situational awareness where the available data is a time series of counts $y(t)$ for time indices $t = 1, 2, \dots, T$. Typically, $y(t)$ represents incident events such as confirmed cases, hospital admissions, or deaths reported either daily or weekly.
+
+Our observation model consists of a sequential delay process with partial ascertainment at each stage:
+
+1. **Sequential delay mechanism**: We model the observation process as a two-stage delay cascade:
+   - First, infections $I(u)$ progress to symptom onset with delay distribution $f_{\theta_1}(d_1)$ and ascertainment fraction $\rho_1$
+   - Then, symptom onsets progress to reporting with delay distribution $f_{\theta_2}(d_2)$ and ascertainment fraction $\rho_2$
+   
+   This gives the conditional expectation:
+   $$\mu(t) = \mathbb{E}[y(t) | I] = \rho_2 \sum_{s \leq t} f_{\theta_2}(t-s) \left( \rho_1 \sum_{u \leq s} f_{\theta_1}(s-u) I(u) \right)$$
+
+   Both distributions were discretised assuming double censoring [@primarycensored]. We convolved the delay from infection to onset and the delay from onset to infection into a single probability mass function.
+   
+2. **Day of week ascertainment**: We modelled day of week effects using a multiplicative factor that varies by day of the week:
+   $$\mu_{\text{dow}}(t) = \mu(t) \times \delta_{\text{dow}(t)}$$
+   where $\delta_{\text{dow}(t)}$ is the day-of-week effect for the day corresponding to time $t$, and $\text{dow}(t) \in \{1,2,\ldots,7\}$ maps the time point to its day of the week. The day-of-week effects are modelled with a normal prior followed by an inverse logit transform:
+   $$\delta_j = \text{logit}^{-1}(\eta_j), \quad \eta_j \sim \text{Normal}(0, \sigma_{\text{dow}})$$
+   for each day $j \in \{1,2,\ldots,7\}$, where $\sigma_{\text{dow}}$ controls the variation in reporting by day of week.
+
+2. **Observation error**: We use a negative binomial distribution to link conditional expectations and actual observations:
+   $$y(t) | I \sim \text{NegBin}(\text{mean} = \mu(t), ~ \text{overdispersion} = \alpha).$$
+
+#### Relationship between model formulations and transmission measures
+
+An important aspect of our framework is understanding how different model formulations relate to the transmission intensity measures. Depending on which process is modelled as primary, different measures will either:
+
+1. **Directly emerge** from the model (e.g., $R_t$ naturally emerges from a renewal process model)
+2. **Require post-processing calculation** as secondary measures (e.g., calculating $R_t$ from a growth rate model)
+
+This distinction affects how uncertainty propagates through the system. When a measure is directly modelled as the primary process, its uncertainty is explicitly represented in the model. When calculated as a secondary measure, its uncertainty depends on transformations of other uncertain quantities.
+
+For example, in a renewal model, $R_t$ is the primary measure and directly influenced by the latent process, while growth rates must be calculated from the resulting infection trajectory. Conversely, in a growth rate model, $r_t$ is primary while $R_t$ must be calculated post hoc. This framework allows us to systematically evaluate how these modeling choices affect the accuracy and uncertainty of all measures of interest. See @fig-model-composition-examples for a visualisation of how different model formulations relate to the transmission intensity measures.
+
+### Simulated scenarios
+
+To test our different model formulations performance on data with known outcomes we use synthetic scenarios grounded in real-world settings. To do this we use the renewal process based model described in the previous section with the Rt trajectory varied between settings but all other components assumed to be the same. For interpretability we stratify these settings into **outbreak** and **endemic** settings. For each of these settings we then repeat simulation using different generation intervals. See the following sub-sections for more details.
+
+#### Simulation method
+
+We use the renewal process model for all simulations with the following procedure:
+
+1. Take a fixed time series of Rt for 70 days. 
+2. Add noise to the fixed Rt estimates draws from a normal distribution with a mean of 0 and a standard deviation of 0.1 with a fixed seed.
+3. Simulate daily incidence starting from $I_0 = 100$ cases and a generation interval (GI) probability mass function (PMF) specific to the given scenario.
+4. The delay between infection and case ascertainment was assumed to follow a Gamma distribution with a shape of 4 and a scale of 5/4. This results in a  which mean of 5 days and standard deviation of 2.5 days.
+5. Simulate day of the week periodicity by applying a day-of-week effect through a logit-scale relative ascertainment model. We assumed reduced weekend reporting which we represented as a lenght 7 vector of $0, 0, 0, 0, 0, -0.5, -0.5$ which after softmax transformation gives differential reporting by day of week.
+6. Simulate additional negative binomial observation noise on the delayed cases with the mean of the true cases and overdispersion determined by a cluster factor of 0.05.
+
+#### Time varying reproduction number trajectories
+
+**Outbreak scenarios**
+
+This is the list of scenarios where the initial number of infections is small but $R_t$ is initially significantly greater the 1 (e.g. $R_t > 1.5$).
+
+- *Susceptible depletion*. A smooth transition over time from $R_t > 1$ to $R_t < 1$. This represents a scenario where decrease in $R_t$ is due to greater population immunity, although it should be noted that we aren't modelling that effect mechanistically.
+- *Susceptible depletion with measures*. A sharp/discontinuous transition over time from $R_t > 1$ to $R_t < 1$, followed by a sharp transition back to $R_t > 1$ and then smooth transition to $R_t < 1$ again. This represents a scenario where initial decrease in $R_t$ is due to implementation of public health measures to reduce transmission. The sharp transition back to $R_t > 1$ is due to later relaxation of measures.
+
+**Endemic scenarios**
+
+- *Regular variation*. A scenario with an endemic disease with sinusoidal variation in $R_t$ around 1 with some period length $P$: e.g. $R_t = 1 + \xi \sin(2 \pi (t - \phi) / P)$.
+- *Regular variation with random effects.* As *Regular* variation scenario but with white noise jitter on $R_t$.
+
+See the SI for scenarios that were considered but not implemented.
+
+#### Generation intervals scenarios
+
+We use three generation intervals (GIs), corresponding to pathogens with short, medium, and long GIs for each infectious disease scenario. The GIs are implemented as Gamma distributions with a fixed standard deviation of 2.0 days and varying means. These continuous distributions are discretized using double interval censoring (assuming a uniform distribution over each daily time interval) using the approach oF [@primarycensored], with the default truncation at the 99th percentile of the distribution.
+
+1. **Short:** Gamma(shape = 1.0, scale = 2.0) with a mean of 2.0 days and a standard deviation of 2.0 days. This corresponds approximately to influenza A, as referenced in Wallinga & Lipsitch, 2006.
+2. **Medium:** Gamma(shape = 25.0, scale = 0.4) with a mean of 10.0 days and a standard deviation of 2.0 days.
+3. **Long:** Gamma(shape = 100.0, scale = 0.2) with a mean of 20.0 days and a standard deviation of 2.0 days.
+
+The discretized probability mass functions are normalized to sum to 1.
+
+### Inference scenarios
+
+Each simulated scenario was extended by considering three model configurations with different generation interval specifications: correct (matching that used in the simulation), too short (mean reduced to 50% of the simulated value), and too long (mean increased to 200% of the simulated value). This variation in assumed generation time distributions was applied to each model configuration while maintaining the generation time distribution used to simulate the underlying scenario data.
+
+### Case study: Sierre Leone 2014-2016 Ebola virus disease
+
+We used data from the 2014-2016 Sierra Leone Ebola virus disease (EVD) epidemic [@Fang2016]. These data contained symptom onset dates and sample test dates for EVD cases in Sierra Leone from May 2014 through September 2015. We used delay distribution estimates from [@Park2024.01.12.24301247] and a estimate for the delay from infection to onset from [@CITATION]. We used the same generation time estimate as [@CITATION]. We estimated all target measures using four 60-day observation windows (0-60, 60-120, 120-180, and 180-240 days after the first symptom onset) following[@Park2024.01.12.24301247].
+
+### Implementation
+
+#### Model framework
+
+We developed each model subcomponent as a submodule within an overarching module framework using Julia 1.11. Development was pre-planned using issues on GitHub and then these were implemented with a pull request-driven workflow to ensure code quality and maintainability with all pull requests being reviewed by at least one reviewer. The modelling framework leverages Julia's type system, implementing models as structs inheriting from a generic model type, with Turing.jl providing the probabilistic programming interface. This approach allowed for the expression of our candidate models using composable components with the minimum of duplicated code. Documentation and testing infrastructure utilize Documenter.jl and Test.jl respectively, ensuring code reliability and accessibility. All submodules were fully tested against synthetic data and theoretical properties. Benchmarking was used to ensure robust performance against a range of auto-differentiable backends. See XX for our code.
+
+#### Prior specification
+
+We conducted comprehensive prior predictive checks for all models, examining components both separately and in combination. By simulating from prior predictive distributions and assessing plausibility against expected epidemiological behavior, we iteratively refined our specifications to ensure numerical stability while avoiding overly restrictive assumptions.
+
+For latent models, we specialized priors by infection-generating process, aiming for plausible daily growth rates or changes in growth rates depending on whether the latent model included differencing. Across all models, we set AR process priors such that autoregressive dependence was between 0 and 1, with more weight placed on 0 dependence for differenced latent processes. The SI provides full specification of our prior choices along with prior predictive visualisations.
+
+#### Model fitting
+
+We fit models using the No-U-Turn Sampler (NUTS), via Turing.jl, initialized using pathfinder, via Pathfinder.jl, with all data available up to the estimation date. Based on our subcomponent benchmarking we used reverse-mode auto-differentiation with a compiled tape for all fitting, via ReverseDiff.jl. We repeated fitting weekly for all scenario and model combinations. For each fit, we used 100 initialisations of Pathfinder, and sampled an initial point for NUTS pre-sampling tuning from the Pathfinder approximate posterior density with the lowest evidence lower bound (ELBO). NUTS sampling was done with 1000 warm up samples and 1000 posterior samples from NUTs across 4 parallel chains. We set an adaptation target of 0.95 and maximum tree depth of 10. During development, we monitored model fitting issues when applying individual sub-models to simulated data, iteratively improving model specifications to ensure reliable convergence. We assessed sampling quality using rank-normalized R-hat statistics (targeting values below 1.05) while monitoring for numerical instabilities using the number of divergent transitions.
+
+We managed model fitting via a Julia module, again using a struct based approach to specify scenarios composably. All fitting was prototyped locally and then run in parallel on JuliaHubs compute platform utilising 32 cores and XX RAM.
+
+### Evaluation
+
+#### Posterior prediction
+
+We fit models to each day, for the simulated scenarios, and for the specified time points in the case times, and visualised posterior predictions of all measures. We assessed coverage, the CRPS, and the CRPS of log-transformed data for all observables, scaling all metrics by the performance of the renewal process infection-generating model and stratifying by the target measure. In addition to overall metrics, we report performance by horizon aggregated by week for the following horizons (-4, -2, -1, 0, 1, 2) and over time. Performance is reported both overall and by scenario and case study.
+
+#### Inference efficiency
+
+We repeated fitting for scenarios where convergence had not been achieved as assessed by the R hat diagnostic and the proportion of divergent transitions until these metrices were smaller than 1.05 and 2% of target samples increasing the target acceptance rate each time starting from a baseline of 0.95. We then recorded the target acceptance rate for which convergence was achieved. As an overall measure of efficiency, we also recorded the effective sample size per second relative to the renewal process model.
+
+#### Implementation
+
+The evaluation framework uses the scoringutils and scoringRules R packages for quantitative assessment and proper scoring rules, integrated into our Julia workflow using RCall.jl due to a current lack of native Julia alternatives. These packages provide functionality for evaluating probabilistic forecasts, including proper scoring rules like CRPS and logarithmic scores, along with tools for visualization and comparative model assessment. The evaluation infrastructure was developed using the same modular approach and pull request-driven workflow as the core implementation, with all visualization and post-processing tasks implemented in Julia except for the scoring steps.
+
+## Results {#sec-results}
+
+We evaluated <number> model configurations across <number> simulated scenarios and one real-world case study.
+Each configuration combined one of three infection-generating processes (direct infection, growth rate, renewal) with one of three latent models (random walk, AR(1), differenced AR(1)) under three generation interval specifications (correct, too short, too long).
+All models were assessed on their ability to estimate three target measures: log-infections, time-varying growth rates, and effective reproduction numbers.
+Model performance was evaluated using CRPS for posterior predictive accuracy, coverage probabilities for uncertainty quantification, and computational efficiency metrics.
+
+### Validation
+
+Prior predictive checks confirmed that our model specifications produced epidemiologically plausible trajectories across all infection-generating processes and latent model combinations (see the SI).
+Initial default priors resulted in <percentage>% model failure rates due to numerical overflow in <specific processes>, leading us to refine prior specifications as detailed in SI.
+Final prior specifications achieved <success rate>% successful prior predictive sampling across all model configurations.
+
+Posterior predictive checks on held-out simulated data demonstrated adequate model calibration and convergence, both for each sub-model and for the full model configurations.
+
+### Simulated scenarios
+
+#### Overall performance across all scenarios
+
+Figure @fig-overall-performance summarises model performance across all simulated scenarios and target measures.
+<Process type> achieved the <best/worst> overall performance with a mean scaled CRPS of <value> (95% CI: <range>) across all target measures (Figure @fig-overall-performance, Panel A).
+Performance varied substantially by target measure, with detailed breakdowns shown in SI Figure @fig-si-target-measures.
+All models demonstrated <degrading/stable> performance with increasing forecast horizon, with accuracy declining by <percentage>% at 2-week forecasts compared to nowcasts (Figure @fig-overall-performance, Panel B).
+Coverage probability assessment revealed <finding> about uncertainty quantification across models (Figure @fig-overall-performance, Panel D).
+Computational efficiency varied by <factor>, with <process> requiring <relative time> compared to the renewal process baseline while achieving <relative accuracy> (Figure @fig-overall-performance, Panel C).
+Detailed computational analysis including runtime scaling and memory usage is presented in SI Figure @fig-si-computational.
+
+**Figure 1: Overall Performance (`fig-overall-performance`)**
+
+- **Panel A**: CRPS performance heatmap (infection-generating process × target measure) scaled relative to renewal process baseline
+- **Panel B**: Performance by forecast horizon (-4 to +2 weeks) showing mean CRPS with confidence intervals across all scenarios
+- **Panel C**: Computational efficiency scatter plot (effective sample size/second vs CRPS accuracy trade-offs)
+- **Panel D**: Coverage probability assessment showing 95% credible interval coverage across models and target measures
+
+### Performance by generation interval specification
+
+Generation interval misspecification impacted all models when estimating effective reproduction numbers, but only affected renewal process models when estimating other target measures (Figure @fig-gi-misspecification).
+When generation intervals were misspecified as too short, all infection-generating processes showed <percentage>% performance degradation for Rt estimation, while only renewal models showed degradation for growth rate and infection targets (Figure @fig-gi-misspecification, Panel A).
+Too-long generation interval specifications resulted in <different impact> across target measures, with renewal models consistently affected regardless of target while direct infection and growth rate models remained robust when estimating their respective primary measures (Figure @fig-gi-misspecification, Panel B).
+Coverage probabilities remained <stable/degraded> under generation interval misspecification, with <process type> maintaining <percentage>% nominal coverage compared to <comparison> (Figure @fig-gi-misspecification, Panel C).
+Computational efficiency showed <pattern> under misspecification, with <process type> requiring <relative time> additional computation when generation intervals were incorrectly specified (Figure @fig-gi-misspecification, Panel D).
+
+**Figure 2: Generation Interval Misspecification Impact (`fig-gi-misspecification`)**
+
+- **Panel A**: Performance degradation by target measure showing differential sensitivity across infection-generating processes (heatmap: process × target measure × GI specification)
+- **Panel B**: Relative performance under GI misspecification compared to correct specification, stratified by primary vs secondary target measures
+- **Panel C**: Coverage probability assessment under generation interval misspecification showing uncertainty quantification robustness
+- **Panel D**: Computational efficiency impact of generation interval misspecification showing relative runtime changes across processes
+
+
+
+#### Performance by epidemiological scenario
+
+Model performance showed <substantial/modest> variation across epidemiological contexts (Figure @fig-scenario-performance, Panel A).
+In outbreak scenarios, <process> demonstrated <performance level> during epidemic growth phases but <different performance> during decline phases, with detailed individual scenario results in SI Figure @fig-si-scenario-details, Panels A-B.
+Endemic scenarios with regular transmission variation favoured <process type>, achieving <performance metric> compared to <comparison>.
+Representative posterior predictions demonstrate <key finding> about model behaviour (Figure @fig-scenario-performance, Panel C).
+Computational efficiency patterns varied by epidemiological context (Figure @fig-scenario-performance, Panel D), with <specific finding> about resource requirements.
+
+**Figure 3: Scenario-Stratified Performance (`fig-scenario-performance`)**
+
+- **Panel A**: CRPS comparison between outbreak vs endemic scenarios (grouped violin plots by infection-generating process)
+- **Panel B**: Impact of generation interval misspecification (correct/short/long) showing relative performance degradation
+- **Panel C**: Representative time series showing posterior predictions vs truth for each infection-generating process
+- **Panel D**: Scenario-specific computational efficiency patterns showing relative runtime by epidemiological context
+
+### Case study: Sierra Leone 2014-2016 Ebola virus disease outbreak
+
+Application to real-world Ebola outbreak data largely confirmed patterns observed in simulated scenarios (Figure @fig-case-study-performance).
+<Process type> achieved <performance level> across the four analysis windows, with <best/worst> performance during <specific outbreak phase> (days <range>) as shown in Figure @fig-case-study-performance, Panel A.
+Forecast accuracy patterns <matched/differed from> simulated scenarios (Figure @fig-case-study-performance, Panel B), with <horizon-specific performance description>.
+Epidemiological interpretation of Rt estimates revealed <key findings> about outbreak dynamics, with estimates aligning with <external evidence/historical events> (Figure @fig-case-study-performance, Panel C).
+Comparison with literature estimates and sensitivity to delay distribution assumptions are detailed in SI Figure @fig-si-case-study-details.
+Real-world data complexity resulted in <increased/similar> computational demands (Figure @fig-case-study-performance, Panel D), with <efficiency comparison> compared to simulated scenarios.
+Detailed analysis by outbreak phase and comparison with external estimates are presented in SI Figure @fig-si-case-study-details, Panels C-D.
+
+**Figure 4: Sierra Leone Case Study (`fig-case-study-performance`)**
+
+- **Panel A**: Performance across four 60-day analysis windows showing temporal progression through outbreak
+- **Panel B**: Forecast horizon analysis comparing real-world vs simulated data performance patterns
+- **Panel C**: Rt estimates with credible intervals overlaid on outbreak timeline with key epidemiological events
+- **Panel D**: Real vs simulated data performance comparison showing generalisability assessment
+
+## Discussion
+
+### Summary
+
+Our study addresses a key question in infectious disease surveillance: is it important that the infection-generating process matches the primary measure used for situational awareness?
+<The renewal process model shows [X%] better performance when estimating effective reproduction numbers but [X%] worse performance for growth rates as secondary measures.>
+<Growth rate models perform [X%] better for growth rate estimation but [X%] worse for effective reproduction number estimation.>
+<Direct infection models demonstrate [X%] better performance for infection forecasting but [X%] worse performance for transmission intensity measures.>
+This pattern demonstrates the importance of aligning the infection-generating process with the primary surveillance objective.
+
+<Model performance varies by [X%] across epidemiological scenarios, with [outbreak/endemic] settings favouring [specific process].>
+<Generation interval misspecification impacts renewal models by [X%] more than alternatives, reflecting their direct dependence on this parameter.>
+<Computational efficiency varies by [X-fold] across model types, with [process type] offering the best performance-to-cost ratio.>
+
+The choice of infection-generating process should be guided by the data-generating process, available computational resources, and confidence in generation interval estimates.
+Following the data-generating process is likely optimal in most cases, with required situational awareness measures computed as post-processing transformations.
+
+### Strengths and limitations of this work
+
+Our composable framework enabled systematic comparison of infection-generating processes while controlling for observation models and evaluation metrics.
+The explicit separation between primary and secondary transmission intensity measures clarified how model structure affects performance across surveillance targets.
+Evaluation across simulated scenarios with known ground truth and real-world case study data provided complementary perspectives.
+
+However, our simulations used the renewal process as the data-generating mechanism, potentially favouring this approach and representing an optimal scenario for renewal-based inference.
+We examined only a single delay distribution structure, though infection-to-reporting delays could substantially influence comparative performance.
+The focus on real-time surveillance meant that retrospective analysis capabilities were not evaluated.
+
+We did not investigate uncertain delay distributions, right truncation effects, or more sophisticated prior modelling approaches.
+The latent process models represent a limited subset of possible approaches.
+Mathematical equivalence relationships between infection-generating processes were not examined, limiting theoretical understanding of observed performance patterns.
+
+### Relationship to existing literature
+
+<Our findings extend previous work by [citations] that compared epidemic growth rates and effective reproduction numbers for situational awareness by explicitly examining the generative modelling perspective.>
+<Earlier studies typically conflated the choice of surveillance measure with the choice of generative process, limiting understanding of how modelling assumptions affect performance across target measures.>
+<Recent work emphasising renewal process advantages for nowcasting applications [citations] aligns with our findings for effective reproduction number estimation but demonstrates this advantage does not extend universally across surveillance tasks.>
+
+<The collaborative forecasting literature has shown mixed results for mechanistic versus phenomenological approaches [citations], and our systematic framework provides insight into these inconsistent findings by demonstrating that optimal model choice depends on the primary surveillance objective.>
+<Previous methodological comparisons often used different observation models and evaluation metrics [citations], limiting interpretability, while our controlled framework addresses these limitations.>
+
+### Future work
+
+Alternative simulation approaches beyond the renewal process model would provide more balanced evaluation scenarios and reduce potential bias toward renewal-based methods.
+Investigation of time-varying delays and delay misspecification would address critical gaps in understanding observation model effects on comparative performance.
+Expanding analysis to include retrospective performance characteristics would complement our real-time focus.
+
+The impact of right truncation in real-time scenarios requires systematic investigation.
+More sophisticated prior modelling approaches warrant evaluation within our comparative framework.
+Mathematical analysis of equivalence relationships between infection-generating processes could provide theoretical grounding for observed empirical patterns.
+
+### Conclusions
+
+The infection-generating process should align with the data-generating process rather than the primary surveillance measure, with required measures computed through post-processing transformations.
+Renewal process models show superior performance for effective reproduction number estimation but inferior performance for growth rate estimation compared to purpose-built alternatives, while simpler models can often achieve nearly the same accuracy while requiring 10x less computational time when resources are constrained.
+Generation interval specification emerges as a critical model selection consideration, with renewal models showing 10x greater sensitivity to generation interval misspecification compared to alternatives, making models with reduced sensitivity more robust in settings with uncertain generation interval estimates.
+These findings demonstrate that following the data-generating process is more important than the choice of surveillance measure, with model selection guided by the underlying data structure rather than the target surveillance objective.
+
+## Funding
+
+## Acknowledgements
+
+## References
