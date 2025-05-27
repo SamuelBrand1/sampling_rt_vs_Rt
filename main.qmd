@@ -153,7 +153,7 @@ To test our different model formulations performance on data with known outcomes
 
 We use the renewal process model for all simulations with the following procedure:
 
-1. Take a fixed time series of Rt for 160 days. 
+1. Take a fixed time series of Rt for 70 days. 
 2. Add noise to the fixed Rt estimates draws from a normal distribution with a mean of 0 and a standard deviation of 0.1 with a fixed seed.
 3. Simulate daily incidence starting from $I_0 = 100$ cases and a generation interval (GI) probability mass function (PMF) specific to the given scenario.
 4. The delay between infection and case ascertainment was assumed to follow a Gamma distribution with a shape of 4 and a scale of 5/4. This results in a  which mean of 5 days and standard deviation of 2.5 days.
